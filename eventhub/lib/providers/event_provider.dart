@@ -7,25 +7,34 @@ class EventProvider extends ChangeNotifier {
   
   List<dynamic> _events = [];
   bool _isLoadingEvents = false;
-  Map<String, dynamic>? _selectedEventDetail;
-  List<dynamic> _eventSponsors = [];
+  String? _errorMessage;
 
   List<dynamic> get events => _events;
   bool get isLoadingEvents => _isLoadingEvents;
-  Map<String, dynamic>? get selectedEventDetail => _selectedEventDetail;
-  List<dynamic> get eventSponsors => _eventSponsors;
+  String? get errorMessage => _errorMessage;
 
   /// GET /api/events — public approved events
   Future<void> fetchEvents() async {
     _isLoadingEvents = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
       final res = await _api.get('/events');
       if (res.statusCode == 200) {
-        _events = jsonDecode(res.body);
+        final decoded = jsonDecode(res.body);
+        if (decoded is List) {
+          _events = decoded;
+        } else {
+          _events = [];
+        }
+        _errorMessage = null;
+      } else {
+        _errorMessage = 'Server error: ${res.statusCode}';
       }
-    } catch (_) {}
+    } catch (e) {
+      _errorMessage = 'Connection error: $e';
+    }
 
     _isLoadingEvents = false;
     notifyListeners();
@@ -36,20 +45,9 @@ class EventProvider extends ChangeNotifier {
     try {
       final res = await _api.get('/events/$eventId');
       if (res.statusCode == 200) {
-        _selectedEventDetail = jsonDecode(res.body);
-        notifyListeners();
-        return _selectedEventDetail;
+        return jsonDecode(res.body);
       }
     } catch (_) {}
     return null;
-  }
-
-  /// Fetch sponsors for an event
-  /// Uses the event_sponsor pivot relationship loaded with the event
-  Future<void> fetchEventSponsors(int eventId) async {
-    _eventSponsors = [];
-    notifyListeners();
-    // Sponsors come with the event detail via the sponsors relationship
-    // We'll parse them from the event data if available
   }
 }

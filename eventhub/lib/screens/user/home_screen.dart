@@ -5,6 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../utils/constants.dart';
 import '../../widgets/event_card.dart';
 import 'event_details_screen.dart';
+import '../profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,7 +16,10 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
+  String _selectedFilter = 'All';
   final _searchCtrl = TextEditingController();
+
+  final List<String> _filters = ['All', 'Technical', 'Workshop', 'Conference', 'Seminar', 'Cultural', 'Other'];
 
   @override
   void initState() {
@@ -31,6 +35,34 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  /// Guess filter category from event title/description
+  String _guessCategory(Map<String, dynamic> event) {
+    final text = '${event['title'] ?? ''} ${event['description'] ?? ''}'.toLowerCase();
+
+    if (text.contains('tech') || text.contains('ai') || text.contains('programming') ||
+        text.contains('hack') || text.contains('code') || text.contains('dev') ||
+        text.contains('software') || text.contains('data') || text.contains('cyber') ||
+        text.contains('تقني') || text.contains('برمج')) {
+      return 'Technical';
+    }
+    if (text.contains('workshop') || text.contains('ورشة') || text.contains('ورشه') ||
+        text.contains('hands-on') || text.contains('training') || text.contains('تدريب')) {
+      return 'Workshop';
+    }
+    if (text.contains('conference') || text.contains('summit') || text.contains('مؤتمر')) {
+      return 'Conference';
+    }
+    if (text.contains('seminar') || text.contains('lecture') || text.contains('talk') ||
+        text.contains('ندوة') || text.contains('محاضر')) {
+      return 'Seminar';
+    }
+    if (text.contains('cultur') || text.contains('art') || text.contains('music') ||
+        text.contains('ثقاف') || text.contains('فن')) {
+      return 'Cultural';
+    }
+    return 'Other';
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<EventProvider>(context);
@@ -39,8 +71,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final filtered = provider.events.where((e) {
       final title = e['title'].toString().toLowerCase();
       final venue = e['venue']?['name']?.toString().toLowerCase() ?? '';
+      final desc = e['description']?.toString().toLowerCase() ?? '';
       final q = _searchQuery.toLowerCase();
-      return title.contains(q) || venue.contains(q);
+      final matchesSearch = title.contains(q) || venue.contains(q) || desc.contains(q);
+
+      if (_selectedFilter == 'All') return matchesSearch;
+      return matchesSearch && _guessCategory(e) == _selectedFilter;
     }).toList();
 
     return Scaffold(
@@ -77,17 +113,33 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      gradient: AppColors.accentGradient,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Center(
-                      child: Text(
-                        auth.userName.isNotEmpty ? auth.userName[0].toUpperCase() : 'U',
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18, color: Colors.white),
+                  // Tappable avatar → Profile
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                      );
+                    },
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        gradient: AppColors.accentGradient,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.accent.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          auth.userName.isNotEmpty ? auth.userName[0].toUpperCase() : 'U',
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18, color: Colors.white),
+                        ),
                       ),
                     ),
                   ),
@@ -127,8 +179,47 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            // Events count
+            const SizedBox(height: 14),
+            // Filter chips
+            SizedBox(
+              height: 38,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                itemCount: _filters.length,
+                itemBuilder: (context, i) {
+                  final f = _filters[i];
+                  final isActive = f == _selectedFilter;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedFilter = f),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          gradient: isActive ? AppColors.accentGradientH : null,
+                          color: isActive ? null : AppColors.bgCard,
+                          borderRadius: BorderRadius.circular(20),
+                          border: isActive ? null : Border.all(color: AppColors.border),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          f,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                            color: isActive ? Colors.white : AppColors.textMuted,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 14),
+            // Events count + refresh
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
@@ -187,7 +278,31 @@ class _HomeScreenState extends State<HomeScreen> {
                               const SizedBox(height: 16),
                               const Text('No events found', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                               const SizedBox(height: 6),
-                              const Text('Try a different search', style: TextStyle(color: AppColors.textMuted)),
+                              Text(
+                                _selectedFilter != 'All'
+                                    ? 'No "$_selectedFilter" events available'
+                                    : 'Try a different search term',
+                                style: const TextStyle(color: AppColors.textMuted),
+                              ),
+                              const SizedBox(height: 16),
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedFilter = 'All';
+                                    _searchQuery = '';
+                                    _searchCtrl.clear();
+                                  });
+                                  provider.fetchEvents();
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.accent.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Text('Reset & Refresh', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
+                                ),
+                              ),
                             ],
                           ),
                         )

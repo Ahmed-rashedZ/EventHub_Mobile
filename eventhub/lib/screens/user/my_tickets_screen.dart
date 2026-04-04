@@ -92,6 +92,9 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
               ),
             ),
             const SizedBox(height: 16),
+            // Error/debug info
+            if (provider.myTickets.isEmpty && !provider.isLoadingTickets)
+              const SizedBox.shrink(),
             // Tab Content
             Expanded(
               child: provider.isLoadingTickets
@@ -108,8 +111,8 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
                   : TabBarView(
                       controller: _tabCtrl,
                       children: [
-                        _buildTicketList(provider.upcomingTickets, isUpcoming: true),
-                        _buildTicketList(provider.pastTickets, isUpcoming: false),
+                        _buildTicketList(provider.upcomingTickets, isUpcoming: true, allTickets: provider.myTickets),
+                        _buildTicketList(provider.pastTickets, isUpcoming: false, allTickets: provider.myTickets),
                       ],
                     ),
             ),
@@ -119,7 +122,26 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
     );
   }
 
-  Widget _buildTicketList(List<dynamic> tickets, {required bool isUpcoming}) {
+  Widget _buildTicketList(List<dynamic> tickets, {required bool isUpcoming, required List<dynamic> allTickets}) {
+    // If both tabs are empty but total tickets exist, show all tickets in the upcoming tab
+    if (tickets.isEmpty && isUpcoming && allTickets.isNotEmpty) {
+      // This handles cases where start_time may be null or in unexpected format
+      return RefreshIndicator(
+        onRefresh: () => Provider.of<TicketProvider>(context, listen: false).fetchMyTickets(),
+        color: AppColors.accent,
+        child: ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          itemCount: allTickets.length,
+          itemBuilder: (context, i) {
+            final ticket = allTickets[i] is Map<String, dynamic>
+                ? allTickets[i] as Map<String, dynamic>
+                : Map<String, dynamic>.from(allTickets[i]);
+            return _buildTicketCard(context, ticket);
+          },
+        ),
+      );
+    }
+
     if (tickets.isEmpty) {
       return Center(
         child: Column(
@@ -152,7 +174,9 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
         padding: const EdgeInsets.symmetric(horizontal: 20),
         itemCount: tickets.length,
         itemBuilder: (context, i) {
-          final ticket = tickets[i];
+          final ticket = tickets[i] is Map<String, dynamic>
+              ? tickets[i] as Map<String, dynamic>
+              : Map<String, dynamic>.from(tickets[i]);
           return _buildTicketCard(context, ticket);
         },
       ),
@@ -164,10 +188,15 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
     final bool isUsed = ticket['status'] == 'used';
     final String statusText = isUsed ? 'USED' : 'ACTIVE';
     final Color statusColor = isUsed ? AppColors.danger : AppColors.success;
-    final String qrCode = ticket['qr_code'] ?? '';
+    final String qrCode = ticket['qr_code']?.toString() ?? '';
 
     final dateStr = event['start_time'];
-    final DateTime dt = dateStr != null ? DateTime.tryParse(dateStr) ?? DateTime.now() : DateTime.now();
+    DateTime dt;
+    try {
+      dt = dateStr != null ? DateTime.parse(dateStr) : DateTime.now();
+    } catch (_) {
+      dt = DateTime.now();
+    }
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     return Container(
@@ -198,7 +227,7 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
               children: [
                 Expanded(
                   child: Text(
-                    event['title'] ?? 'Event',
+                    event['title']?.toString() ?? 'Event',
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -261,7 +290,7 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              event['venue']?['name'] ?? 'TBA',
+                              event['venue']?['name']?.toString() ?? 'TBA',
                               style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -285,7 +314,7 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
                         MaterialPageRoute(
                           builder: (_) => QRCodeScreen(
                             qrCode: qrCode,
-                            eventTitle: event['title'] ?? 'Event',
+                            eventTitle: event['title']?.toString() ?? 'Event',
                             ticketId: ticket['id'].toString(),
                             isUsed: isUsed,
                           ),
