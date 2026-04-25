@@ -32,10 +32,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final res = await api.get('/notifications');
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
-        if (data is List) {
+        // Backend returns { notifications: [...], unread_count: N }
+        if (data is Map && data['notifications'] != null) {
+          setState(() {
+            _notifications = data['notifications'];
+            _unreadCount = data['unread_count'] ?? 0;
+          });
+        } else if (data is List) {
           setState(() {
             _notifications = data;
-            _unreadCount = data.where((n) => n['is_read'] == false || n['is_read'] == 0).length;
+            _unreadCount = data.where((n) => n['read_at'] == null).length;
           });
         }
       }
@@ -43,10 +49,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _loadingNotifications = false);
   }
 
-  Future<void> _markAsRead(int id) async {
+  Future<void> _markAsRead(dynamic id) async {
     try {
       final api = ApiService();
       await api.put('/notifications/$id/read');
+      _fetchNotifications();
+    } catch (_) {}
+  }
+
+  Future<void> _markAllRead() async {
+    try {
+      final api = ApiService();
+      await api.put('/notifications/read-all');
       _fetchNotifications();
     } catch (_) {}
   }
@@ -65,7 +79,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Header with back if pushed, and notifications
               Row(
@@ -391,10 +405,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         if (res.statusCode == 200) {
                           // Update local user data
                           await auth.checkAuth();
-                          // Re-save updated user info
-                          if (data['user'] != null) {
-                            final prefs = await auth.checkAuth();
-                          }
                           if (ctx.mounted) Navigator.pop(ctx);
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -488,7 +498,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(width: 10),
                   const Text('Notifications', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
                   const Spacer(),
-                  if (_unreadCount > 0)
+                  if (_unreadCount > 0) ...[
+                    GestureDetector(
+                      onTap: () { _markAllRead(); Navigator.pop(ctx); },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.accent.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text('Mark All Read', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.accent)),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
@@ -500,6 +522,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.danger),
                       ),
                     ),
+                  ],
                 ],
               ),
             ),
@@ -523,37 +546,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           itemCount: _notifications.length,
                           itemBuilder: (_, i) {
                             final n = _notifications[i];
-                            final isRead = n['is_read'] == true || n['is_read'] == 1;
+                            // Laravel Notifications: read_at == null means unread
+                            final isRead = n['read_at'] != null;
+                            // Data is stored in 'data' field (may be string or map)
+                            dynamic nData = n['data'];
+                            if (nData is String) {
+                              try { nData = jsonDecode(nData); } catch (_) { nData = {}; }
+                            }
+                            nData ??= {};
+                            final title = nData['title']?.toString() ?? '';
+                            final message = nData['message']?.toString() ?? n['message']?.toString() ?? '';
+                            final icon = nData['icon']?.toString() ?? '🔔';
+                            final type = nData['type']?.toString() ?? 'system';
+
+                            Color typeColor;
+                            switch (type) {
+                              case 'event': typeColor = AppColors.accent; break;
+                              case 'sponsorship': typeColor = AppColors.warning; break;
+                              case 'ticket': typeColor = AppColors.success; break;
+                              case 'verification': typeColor = AppColors.accent2; break;
+                              default: typeColor = AppColors.textMuted;
+                            }
+
                             return Container(
                               margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                               decoration: BoxDecoration(
-                                color: isRead ? Colors.transparent : AppColors.accent.withValues(alpha: 0.06),
+                                color: isRead ? Colors.transparent : typeColor.withValues(alpha: 0.06),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: isRead ? Colors.transparent : AppColors.accent.withValues(alpha: 0.12)),
+                                border: Border.all(color: isRead ? Colors.transparent : typeColor.withValues(alpha: 0.12)),
                               ),
                               child: ListTile(
                                 leading: Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: (isRead ? AppColors.textMuted : AppColors.accent2).withValues(alpha: 0.12),
+                                    color: (isRead ? AppColors.textMuted : typeColor).withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: Icon(
-                                    isRead ? Icons.notifications_none : Icons.notifications_active,
-                                    color: isRead ? AppColors.textMuted : AppColors.accent2,
-                                    size: 20,
-                                  ),
+                                  child: Text(icon, style: const TextStyle(fontSize: 18)),
                                 ),
-                                title: Text(
-                                  n['message']?.toString() ?? '',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: isRead ? FontWeight.w400 : FontWeight.w600,
-                                  ),
-                                ),
+                                title: title.isNotEmpty
+                                    ? Text(title, style: TextStyle(fontSize: 13, fontWeight: isRead ? FontWeight.w400 : FontWeight.w700, color: AppColors.textPrimary))
+                                    : null,
                                 subtitle: Text(
-                                  _formatDate(n['created_at']),
-                                  style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                                  message,
+                                  style: TextStyle(fontSize: 13, fontWeight: isRead ? FontWeight.w400 : FontWeight.w500, color: isRead ? AppColors.textMuted : AppColors.textPrimary),
+                                  maxLines: 2, overflow: TextOverflow.ellipsis,
                                 ),
                                 trailing: !isRead
                                     ? GestureDetector(
@@ -570,7 +607,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           child: const Icon(Icons.check, size: 16, color: AppColors.success),
                                         ),
                                       )
-                                    : null,
+                                    : Text(_formatDate(n['created_at']), style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
                               ),
                             );
                           },

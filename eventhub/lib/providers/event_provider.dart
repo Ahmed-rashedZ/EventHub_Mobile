@@ -50,4 +50,35 @@ class EventProvider extends ChangeNotifier {
     } catch (_) {}
     return null;
   }
+
+  /// POST /api/events/{id}/rate — rate an event (1-5 stars + optional review)
+  Future<String?> rateEvent(int eventId, int rating, {String? reviewText}) async {
+    try {
+      final body = <String, dynamic>{'rating': rating};
+      if (reviewText != null && reviewText.trim().isNotEmpty) {
+        body['review_text'] = reviewText.trim();
+      }
+      final res = await _api.post('/events/$eventId/rate', body);
+      final data = jsonDecode(res.body);
+
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        return null; // success
+      } else {
+        return data['message'] ?? 'Failed to submit rating';
+      }
+    } catch (e) {
+      return 'Connection error: $e';
+    }
+  }
+
+  /// GET /api/events/{id}/reviews — get event reviews
+  Future<Map<String, dynamic>?> fetchReviews(int eventId) async {
+    try {
+      final res = await _api.get('/events/$eventId/reviews');
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body);
+      }
+    } catch (_) {}
+    return null;
+  }
 }
