@@ -38,4 +38,5 @@ class AppColors {
 class ApiConstants {
   // Since you are using USB, run: adb reverse tcp:8000 tcp:8000
   static const String baseUrl = 'http://127.0.0.1:8000/api';
+  static const String imageUrl = 'http://127.0.0.1:8000/storage/';
 }

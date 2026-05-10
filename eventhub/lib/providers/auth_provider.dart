@@ -130,4 +130,55 @@ class AuthProvider extends ChangeNotifier {
     _isAuthenticated = false;
     notifyListeners();
   }
+
+  Future<String?> forgotPassword(String email) async {
+    try {
+      final res = await _api.post('/password/forgot', {'email': email});
+      final data = jsonDecode(res.body);
+      if (res.statusCode == 200) return null; // Success
+      
+      return data['message'] ?? 'Failed to send OTP';
+    } catch (e) {
+      return 'Connection error.';
+    }
+  }
+
+  Future<String?> verifyCode(String email, String code) async {
+    try {
+      final res = await _api.post('/password/verify-code', {
+        'email': email,
+        'code': code,
+      });
+      final data = jsonDecode(res.body);
+      if (res.statusCode == 200) return null; // Success
+      
+      return data['message'] ?? 'Invalid or expired OTP';
+    } catch (e) {
+      return 'Connection error.';
+    }
+  }
+
+  Future<String?> resetPassword(String email, String code, String password) async {
+    try {
+      final res = await _api.post('/password/reset', {
+        'email': email,
+        'code': code,
+        'password': password,
+        'password_confirmation': password,
+      });
+      final data = jsonDecode(res.body);
+      if (res.statusCode == 200) return null; // Success
+      
+      if (data['errors'] != null) {
+        final errors = data['errors'] as Map<String, dynamic>;
+        final firstErrorList = errors.values.first;
+        if (firstErrorList is List && firstErrorList.isNotEmpty) {
+          return firstErrorList[0].toString();
+        }
+      }
+      return data['message'] ?? 'Failed to reset password';
+    } catch (e) {
+      return 'Connection error.';
+    }
+  }
 }

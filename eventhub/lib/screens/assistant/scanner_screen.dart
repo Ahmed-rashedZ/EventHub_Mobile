@@ -5,6 +5,7 @@ import '../../providers/ticket_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/constants.dart';
 import '../auth/login_screen.dart';
+import 'event_participants_screen.dart';
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -216,6 +217,20 @@ class _ScannerScreenState extends State<ScannerScreen> {
                     child: Text(
                       auth.userName,
                       style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Participants List
+                  GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EventParticipantsScreen())),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
+                      ),
+                      child: const Icon(Icons.people_alt, color: Colors.white, size: 20),
                     ),
                   ),
                   const SizedBox(width: 8),

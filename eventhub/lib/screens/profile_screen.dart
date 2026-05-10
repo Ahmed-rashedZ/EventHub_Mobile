@@ -139,37 +139,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 10),
               // Profile header
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF1A1F36), Color(0xFF161B22)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.border),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
+              Stack(
+                alignment: Alignment.center,
+                clipBehavior: Clip.none,
+                children: [
+                  // Blurred background header
+                  Container(
+                    height: 140,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      gradient: LinearGradient(
+                        colors: [AppColors.accent.withValues(alpha: 0.3), AppColors.accent2.withValues(alpha: 0.1)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                     ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Container(
+                  ),
+                  Positioned(
+                    top: 100,
+                    child: Container(
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
                         gradient: AppColors.accentGradient,
                         shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.bgDark, width: 4),
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.accent.withValues(alpha: 0.4),
-                            blurRadius: 20,
-                            offset: const Offset(0, 6),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
@@ -180,69 +180,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Text(name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.accent.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(role, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.accent)),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 50), // space for overlapping avatar
+
+              Text(name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
+                ),
+                child: Text(role, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.accent)),
+              ),
+              const SizedBox(height: 24),
 
               // Stats row
               Row(
                 children: [
-                  _buildStatCard(icon: Icons.confirmation_number_outlined, label: 'Total Tickets', value: tickets.myTickets.length.toString(), color: AppColors.accent),
+                  _buildStatCard(icon: Icons.confirmation_number_outlined, label: 'Tickets', value: tickets.myTickets.length.toString(), color: AppColors.accent),
                   const SizedBox(width: 12),
                   _buildStatCard(icon: Icons.event_available, label: 'Attended', value: tickets.totalAttended.toString(), color: AppColors.success),
                   const SizedBox(width: 12),
                   _buildStatCard(icon: Icons.upcoming, label: 'Upcoming', value: tickets.upcomingTickets.length.toString(), color: AppColors.accent2),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
               // Info section
               Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
                   color: AppColors.bgCard,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.border),
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4))],
                 ),
                 child: Column(
                   children: [
-                    _buildInfoItem(icon: Icons.email_outlined, title: 'Email', value: email),
-                    const Divider(color: AppColors.border, height: 1),
+                    _buildInfoItem(icon: Icons.email_outlined, title: 'Email Address', value: email),
+                    const Divider(color: AppColors.border, height: 1, indent: 60),
                     _buildInfoItem(icon: Icons.badge_outlined, title: 'Account Type', value: role),
-                    const Divider(color: AppColors.border, height: 1),
+                    const Divider(color: AppColors.border, height: 1, indent: 60),
                     _buildInfoItem(icon: Icons.calendar_today_outlined, title: 'Member Since', value: _formatDate(user?['created_at'])),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
               // Edit Profile button
               GestureDetector(
                 onTap: () => _showEditProfileDialog(context, auth),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.accent.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.accent.withValues(alpha: 0.2)),
+                    color: AppColors.bgCard,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.border),
                   ),
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.edit, color: AppColors.accent, size: 20),
+                      Icon(Icons.edit_outlined, color: Colors.white, size: 20),
                       SizedBox(width: 8),
-                      Text('Edit Profile', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700, fontSize: 15)),
+                      Text('Edit Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
                     ],
                   ),
                 ),
@@ -253,10 +257,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               GestureDetector(
                 onTap: () => _showLogoutDialog(context, auth),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   decoration: BoxDecoration(
                     color: AppColors.danger.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: AppColors.danger.withValues(alpha: 0.2)),
                   ),
                   child: const Row(
@@ -264,7 +268,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       Icon(Icons.logout, color: AppColors.danger, size: 20),
                       SizedBox(width: 8),
-                      Text('Logout', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700, fontSize: 15)),
+                      Text('Logout', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w600, fontSize: 15)),
                     ],
                   ),
                 ),
@@ -280,23 +284,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildStatCard({required IconData icon, required String label, required String value, required Color color}) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
           color: AppColors.bgCard,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.border),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4))],
         ),
         child: Column(
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            const SizedBox(height: 10),
-            Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: color)),
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 8),
+            Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: color, height: 1)),
             const SizedBox(height: 4),
-            Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w500), textAlign: TextAlign.center),
+            Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.w500), textAlign: TextAlign.center),
           ],
         ),
       ),
@@ -305,22 +306,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildInfoItem({required IconData icon, required String title, required String value}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: AppColors.accent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: AppColors.textMuted.withValues(alpha: 0.1), shape: BoxShape.circle),
             child: Icon(icon, color: AppColors.textMuted, size: 20),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: const TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.w500)),
                 const SizedBox(height: 2),
-                Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white)),
               ],
             ),
           ),

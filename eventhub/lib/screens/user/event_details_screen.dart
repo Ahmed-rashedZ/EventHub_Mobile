@@ -5,6 +5,9 @@ import '../../providers/event_provider.dart';
 
 import '../../utils/constants.dart';
 import '../../widgets/gradient_button.dart';
+import '../../widgets/rate_event_bottom_sheet.dart';
+import 'public_profile_screen.dart';
+import 'reviews_list_screen.dart';
 
 class EventDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> event;
@@ -42,7 +45,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   void _checkTicket() {
     final tickets = Provider.of<TicketProvider>(context, listen: false).myTickets;
     final eventId = widget.event['id'];
-    _hasTicket = tickets.any((t) => t['event']?['id'] == eventId);
+    _hasTicket = tickets.any((t) => t['event']?['id'].toString() == eventId.toString());
   }
 
   void _loadReviews() async {
@@ -184,18 +187,44 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 ),
                 child: Stack(
                   children: [
-                    Positioned(right: -40, top: -40, child: Container(
-                      width: 220, height: 220,
-                      decoration: BoxDecoration(shape: BoxShape.circle, gradient: RadialGradient(
-                        colors: [AppColors.accent.withValues(alpha: 0.2), Colors.transparent],
+                    if (e['image'] != null)
+                      Positioned.fill(
+                        child: Image.network(
+                          e['image'].toString().startsWith('http') ? e['image'] : '${ApiConstants.imageUrl}${e['image']}',
+                          fit: BoxFit.cover,
+                          colorBlendMode: BlendMode.darken,
+                          color: AppColors.bgDark.withValues(alpha: 0.6),
+                          errorBuilder: (_, __, ___) => const SizedBox(),
+                        ),
+                      ),
+                    if (e['image'] == null) ...[
+                      Positioned(right: -40, top: -40, child: Container(
+                        width: 220, height: 220,
+                        decoration: BoxDecoration(shape: BoxShape.circle, gradient: RadialGradient(
+                          colors: [AppColors.accent.withValues(alpha: 0.2), Colors.transparent],
+                        )),
                       )),
-                    )),
-                    Positioned(left: -30, bottom: 80, child: Container(
-                      width: 160, height: 160,
-                      decoration: BoxDecoration(shape: BoxShape.circle, gradient: RadialGradient(
-                        colors: [AppColors.accent2.withValues(alpha: 0.12), Colors.transparent],
+                      Positioned(left: -30, bottom: 80, child: Container(
+                        width: 160, height: 160,
+                        decoration: BoxDecoration(shape: BoxShape.circle, gradient: RadialGradient(
+                          colors: [AppColors.accent2.withValues(alpha: 0.12), Colors.transparent],
+                        )),
                       )),
-                    )),
+                    ],
+                    // Bottom gradient for text legibility
+                    Positioned(
+                      bottom: 0, left: 0, right: 0,
+                      height: 120,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Colors.transparent, AppColors.bgDark],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                        ),
+                      ),
+                    ),
                     Positioned(
                       left: 20, bottom: 20, right: 20,
                       child: Column(
@@ -237,7 +266,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                           const SizedBox(height: 10),
                           Text(
                             e['title'] ?? 'Untitled',
-                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.5),
+                            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.5, height: 1.2),
                           ),
                         ],
                       ),
@@ -261,7 +290,16 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   _buildInfoCard(Icons.people_outline, 'Capacity', '${e['capacity']} attendees'),
                   if (e['creator'] != null) ...[
                     const SizedBox(height: 12),
-                    _buildInfoCard(Icons.person_outlined, 'Organized by', e['creator']?['name'] ?? 'Unknown'),
+                    GestureDetector(
+                      onTap: () {
+                        if (e['creator']['id'] != null) {
+                          Navigator.push(context, MaterialPageRoute(
+                            builder: (_) => PublicProfileScreen(userId: e['creator']['id']),
+                          ));
+                        }
+                      },
+                      child: _buildInfoCard(Icons.person_outlined, 'Organized by', e['creator']?['name'] ?? 'Unknown'),
+                    ),
                   ],
                   const SizedBox(height: 24),
                   // Description
@@ -279,6 +317,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       style: const TextStyle(fontSize: 15, color: AppColors.textPrimary, height: 1.6),
                     ),
                   ),
+                  // Agenda Section
+                  if (e['agenda'] != null) ...[
+                    const SizedBox(height: 24),
+                    _sectionTitle('Event Agenda', Icons.view_timeline_outlined),
+                    const SizedBox(height: 12),
+                    _buildAgenda(e['agenda']),
+                  ],
                   // Sponsors section
                   if (sponsors.isNotEmpty) ...[
                     const SizedBox(height: 24),
@@ -298,37 +343,84 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     const SizedBox(height: 24),
                     _sectionTitle('Rate This Event', Icons.star_outline_rounded),
                     const SizedBox(height: 12),
-                    _buildRatingInput(),
+                    GradientButton(
+                      text: 'Leave a Review',
+                      onPressed: () async {
+                        final result = await showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => RateEventBottomSheet(
+                            eventId: e['id'],
+                            eventTitle: e['title'] ?? 'Event',
+                          ),
+                        );
+                        if (result == true) {
+                          _loadReviews();
+                        }
+                      },
+                      icon: Icons.rate_review,
+                      colors: const [AppColors.warning, Color(0xFFD97706)],
+                      isLoading: false,
+                    ),
                   ],
                   // Reviews section
                   if (_reviews.isNotEmpty) ...[
                     const SizedBox(height: 24),
-                    _sectionTitle('Reviews ($_totalReviews)', Icons.rate_review_outlined),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _sectionTitle('Reviews ($_totalReviews)', Icons.rate_review_outlined),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(context, MaterialPageRoute(
+                              builder: (_) => ReviewsListScreen(
+                                eventId: widget.event['id'],
+                                eventTitle: widget.event['title'] ?? 'Event',
+                              ),
+                            ));
+                          },
+                          child: const Text('See All', style: TextStyle(color: AppColors.accent)),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 12),
-                    ..._reviews.take(5).map((r) => _buildReviewCard(r)),
+                    ..._reviews.take(3).map((r) => _buildReviewCard(r)),
                   ] else if (_loadingReviews) ...[
                     const SizedBox(height: 24),
                     const Center(child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2)),
                   ],
-                  const SizedBox(height: 32),
-                  // Book button
-                  if (!isStarted)
-                    GradientButton(
-                      text: _hasTicket ? 'Already Booked ✓' : 'Book Ticket',
-                      isLoading: _isBooking,
-                      onPressed: _hasTicket ? () {} : _book,
-                      icon: _hasTicket ? Icons.check_circle : Icons.confirmation_number_outlined,
-                      colors: _hasTicket
-                          ? [AppColors.textMuted, AppColors.textMuted]
-                          : [AppColors.success, const Color(0xFF16A34A)],
-                    ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 100), // padding for sticky bottom bar
                 ],
               ),
             ),
           ),
         ],
       ),
+      bottomNavigationBar: !isStarted ? SafeArea(
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+          decoration: BoxDecoration(
+            color: AppColors.bgCard,
+            border: const Border(top: BorderSide(color: AppColors.border)),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 16, offset: const Offset(0, -4))],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GradientButton(
+                text: _hasTicket ? 'Already Booked ✓' : 'Book Ticket',
+                isLoading: _isBooking,
+                onPressed: _hasTicket ? () {} : _book,
+                icon: _hasTicket ? Icons.check_circle : Icons.confirmation_number_outlined,
+                colors: _hasTicket
+                    ? [AppColors.textMuted.withValues(alpha: 0.3), AppColors.textMuted.withValues(alpha: 0.3)]
+                    : [AppColors.success, const Color(0xFF16A34A)],
+              ),
+            ],
+          ),
+        ),
+      ) : null,
     );
   }
 
@@ -377,37 +469,46 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final tier = sponsor['pivot']?['tier'] ?? 'bronze';
     final tColor = _tierColor(tier);
 
-    return Container(
-      margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [tColor.withValues(alpha: 0.08), AppColors.bgCard]),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: tColor.withValues(alpha: 0.25)),
-      ),
-      child: Row(children: [
-        if (logo != null)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Image.network(logo, width: 42, height: 42, fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _avatarBox(name, tColor)),
-          )
-        else _avatarBox(name, tColor),
-        const SizedBox(width: 10),
-        Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(color: tColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
-              child: Text(tier.toString().toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: tColor)),
-            ),
-          ],
+    return GestureDetector(
+      onTap: () {
+        if (sponsor['id'] != null) {
+          Navigator.push(context, MaterialPageRoute(
+            builder: (_) => PublicProfileScreen(userId: sponsor['id']),
+          ));
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: [tColor.withValues(alpha: 0.08), AppColors.bgCard]),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: tColor.withValues(alpha: 0.25)),
         ),
-      ]),
+        child: Row(children: [
+          if (logo != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.network(logo, width: 42, height: 42, fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _avatarBox(name, tColor)),
+            )
+          else _avatarBox(name, tColor),
+          const SizedBox(width: 10),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(color: tColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
+                child: Text(tier.toString().toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: tColor)),
+              ),
+            ],
+          ),
+        ]),
+      ),
     );
   }
 
@@ -518,6 +619,81 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           Text(text, style: const TextStyle(fontSize: 13, color: AppColors.textPrimary, height: 1.5)),
         ],
       ]),
+    );
+  }
+
+  Widget _buildAgenda(dynamic agenda) {
+    if (agenda == null) return const SizedBox();
+    
+    if (agenda is List) {
+      if (agenda.isEmpty) return const SizedBox();
+      return Column(
+        children: agenda.map((item) => _buildAgendaItem(item)).toList(),
+      );
+    } else if (agenda is Map) {
+      if (agenda.isEmpty) return const SizedBox();
+      final keys = agenda.keys.toList()..sort();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: keys.map((dateStr) {
+          final items = agenda[dateStr] as List<dynamic>?;
+          if (items == null || items.isEmpty) return const SizedBox();
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(bottom: 6, top: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text('📅 $dateStr', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.accent)),
+              ),
+              ...items.map((item) => _buildAgendaItem(item)),
+            ],
+          );
+        }).toList(),
+      );
+    }
+    return const SizedBox();
+  }
+
+  Widget _buildAgendaItem(dynamic item) {
+    final start = item['start_time'] ?? '';
+    final end = item['end_time'] ?? '';
+    final title = item['title'] ?? 'Agenda Item';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.accent2.withValues(alpha: 0.04),
+        border: Border.all(color: AppColors.accent2.withValues(alpha: 0.12)),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.accent2.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              children: [
+                Text(start, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.accent2)),
+                const SizedBox(width: 4),
+                const Text('→', style: TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                const SizedBox(width: 4),
+                Text(end, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.warning)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.white))),
+        ],
+      ),
     );
   }
 

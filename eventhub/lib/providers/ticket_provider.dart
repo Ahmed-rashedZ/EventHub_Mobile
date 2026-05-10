@@ -117,4 +117,15 @@ class TicketProvider extends ChangeNotifier {
       _myTickets = jsonDecode(cached);
     }
   }
+
+  /// GET /api/checkin/event/{id} — fetch participants for an event (Assistant role)
+  Future<List<dynamic>> fetchEventParticipants(int eventId) async {
+    try {
+      final res = await _api.get('/checkin/event/$eventId');
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body);
+      }
+    } catch (_) {}
+    return [];
+  }
 }

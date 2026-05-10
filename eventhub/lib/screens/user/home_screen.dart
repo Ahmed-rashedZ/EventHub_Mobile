@@ -201,9 +201,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           : RefreshIndicator(
                               onRefresh: () => eventProv.fetchEvents(),
                               color: AppColors.accent,
-                              child: ListView.builder(
-                                padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+                              backgroundColor: AppColors.bgCard,
+                              child: ListView.separated(
+                                padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
                                 itemCount: filtered.length,
+                                separatorBuilder: (_, __) => const SizedBox(height: 16),
                                 itemBuilder: (_, i) => _buildEventCard(filtered[i]),
                               ),
                             ),
@@ -251,116 +253,114 @@ class _HomeScreenState extends State<HomeScreen> {
     final isEnded = endDt != null && endDt.isBefore(now);
     final isLive = !isEnded && dt.isBefore(now);
 
+    final imageUrl = image != null ? (image.toString().startsWith('http') ? image : '${ApiConstants.imageUrl}$image') : null;
+
     return GestureDetector(
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EventDetailsScreen(event: event))),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: AppColors.bgCard,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.border),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 12, offset: const Offset(0, 4))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 4))],
         ),
+        clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Image / Gradient Header ──
-            Container(
-              height: 140,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-                gradient: image == null ? LinearGradient(
-                  colors: [catColor.withValues(alpha: 0.25), AppColors.bgCard],
-                  begin: Alignment.topLeft, end: Alignment.bottomRight,
-                ) : null,
-                image: image != null ? DecorationImage(
-                  image: NetworkImage(image.toString().startsWith('http') ? image : 'http://127.0.0.1:8000/storage/$image'),
-                  fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.3), BlendMode.darken),
-                ) : null,
-              ),
-              child: Stack(
-                children: [
-                  // Decorative circles when no image
-                  if (image == null) ...[
-                    Positioned(right: -20, top: -20, child: Container(
-                      width: 100, height: 100,
-                      decoration: BoxDecoration(shape: BoxShape.circle, color: catColor.withValues(alpha: 0.08)),
-                    )),
-                    Positioned(left: 20, bottom: 20, child: Container(
-                      width: 60, height: 60,
-                      decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.accent2.withValues(alpha: 0.06)),
-                    )),
-                    // Big icon
-                    Center(child: Icon(_catIcons[category], size: 50, color: catColor.withValues(alpha: 0.15))),
-                  ],
-                  // Top badges
-                  Positioned(
-                    top: 12, left: 12, right: 12,
-                    child: Row(
-                      children: [
-                        _chip(category, catColor, icon: _catIcons[category]),
-                        const Spacer(),
-                        if (avgRating != null && (avgRating is num ? avgRating > 0 : double.tryParse(avgRating.toString()) != null && double.parse(avgRating.toString()) > 0))
-                          _chip(double.parse(avgRating.toString()).toStringAsFixed(1), AppColors.warning, icon: Icons.star_rounded),
-                        if (avgRating != null && (avgRating is num ? avgRating > 0 : double.tryParse(avgRating.toString()) != null && double.parse(avgRating.toString()) > 0))
-                          const SizedBox(width: 6),
-                        if (isEnded)
-                          _chip('Ended', AppColors.textMuted)
-                        else if (isLive)
-                          _chip('Live', AppColors.success, glow: true)
-                        else
-                          _chip('Upcoming', AppColors.accent2),
-                      ],
-                    ),
-                  ),
-                  // Date block
-                  Positioned(
-                    bottom: 12, right: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: AppColors.bgDark.withValues(alpha: 0.85),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            // ── Edge-to-Edge Image Header ──
+            if (imageUrl != null)
+              SizedBox(
+                height: 160,
+                width: double.infinity,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: AppColors.bgCard,
+                        child: Icon(_catIcons[category], size: 48, color: catColor.withValues(alpha: 0.3)),
                       ),
-                      child: Column(children: [
-                        Text(dt.day.toString(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.accent, height: 1)),
-                        Text(months[dt.month - 1], style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
-                      ]),
                     ),
+                    _buildBadgesOverlay(category, catColor, avgRating, isEnded, isLive),
+                  ],
+                ),
+              )
+            else
+              Container(
+                height: 120,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.bgCard, catColor.withValues(alpha: 0.15)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                ],
+                ),
+                child: Stack(
+                  children: [
+                    Center(child: Icon(_catIcons[category], size: 48, color: catColor.withValues(alpha: 0.3))),
+                    _buildBadgesOverlay(category, catColor, avgRating, isEnded, isLive),
+                  ],
+                ),
               ),
-            ),
+
             // ── Content ──
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Column(
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: -0.3, height: 1.3), maxLines: 2, overflow: TextOverflow.ellipsis),
-                  if (desc.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Text(desc, style: TextStyle(fontSize: 13, color: AppColors.textMuted.withValues(alpha: 0.7), height: 1.4), maxLines: 2, overflow: TextOverflow.ellipsis),
-                  ],
-                  const SizedBox(height: 12),
-                  // Info row
-                  Row(
-                    children: [
-                      Icon(Icons.access_time_rounded, size: 14, color: AppColors.textMuted.withValues(alpha: 0.6)),
-                      const SizedBox(width: 4),
-                      Text(timeStr, style: TextStyle(fontSize: 13, color: AppColors.textMuted.withValues(alpha: 0.8), fontWeight: FontWeight.w500)),
-                      const SizedBox(width: 14),
-                      Icon(Icons.location_on_outlined, size: 14, color: AppColors.textMuted.withValues(alpha: 0.6)),
-                      const SizedBox(width: 4),
-                      Expanded(child: Text(venueName, style: TextStyle(fontSize: 13, color: AppColors.textMuted.withValues(alpha: 0.8), fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis)),
-                      if (capacity != null) ...[
-                        Icon(Icons.people_outline, size: 14, color: AppColors.textMuted.withValues(alpha: 0.5)),
-                        const SizedBox(width: 3),
-                        Text('${ticketsCount ?? 0}/$capacity', style: TextStyle(fontSize: 12, color: AppColors.textMuted.withValues(alpha: 0.6))),
+                  // Date Calendar Box
+                  Container(
+                    width: 54,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.bgDark,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(months[dt.month - 1].toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.accent2)),
+                        const SizedBox(height: 2),
+                        Text(dt.day.toString(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white, height: 1.1)),
                       ],
-                    ],
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  // Details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.3, color: Colors.white), maxLines: 2, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(Icons.access_time_rounded, size: 14, color: AppColors.textMuted.withValues(alpha: 0.8)),
+                            const SizedBox(width: 4),
+                            Text(timeStr, style: TextStyle(fontSize: 13, color: AppColors.textMuted.withValues(alpha: 0.9), fontWeight: FontWeight.w500)),
+                            const SizedBox(width: 12),
+                            Icon(Icons.location_on_outlined, size: 14, color: AppColors.textMuted.withValues(alpha: 0.8)),
+                            const SizedBox(width: 4),
+                            Expanded(child: Text(venueName, style: TextStyle(fontSize: 13, color: AppColors.textMuted.withValues(alpha: 0.9), fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis)),
+                          ],
+                        ),
+                        if (capacity != null) ...[
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Icon(Icons.people_outline, size: 14, color: AppColors.textMuted.withValues(alpha: 0.8)),
+                              const SizedBox(width: 4),
+                              Text('${ticketsCount ?? 0} / $capacity Attendees', style: TextStyle(fontSize: 12, color: AppColors.textMuted.withValues(alpha: 0.9))),
+                            ],
+                          ),
+                        ]
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -371,18 +371,40 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _chip(String text, Color color, {IconData? icon, bool glow = false}) {
+  Widget _buildBadgesOverlay(String category, Color catColor, dynamic avgRating, bool isEnded, bool isLive) {
+    return Positioned(
+      top: 12, left: 12, right: 12,
+      child: Row(
+        children: [
+          _chip(category, catColor, icon: _catIcons[category], solid: true),
+          const Spacer(),
+          if (avgRating != null && (avgRating is num ? avgRating > 0 : double.tryParse(avgRating.toString()) != null && double.parse(avgRating.toString()) > 0))
+            _chip(double.parse(avgRating.toString()).toStringAsFixed(1), AppColors.warning, icon: Icons.star_rounded, solid: true),
+          if (avgRating != null && (avgRating is num ? avgRating > 0 : double.tryParse(avgRating.toString()) != null && double.parse(avgRating.toString()) > 0))
+            const SizedBox(width: 6),
+          if (isEnded)
+            _chip('Ended', AppColors.textMuted, solid: true)
+          else if (isLive)
+            _chip('Live', AppColors.success, glow: true, solid: true)
+          else
+            _chip('Upcoming', AppColors.accent2, solid: true),
+        ],
+      ),
+    );
+  }
+
+  Widget _chip(String text, Color color, {IconData? icon, bool glow = false, bool solid = false}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: AppColors.bgDark.withValues(alpha: 0.8),
+        color: solid ? Colors.black.withValues(alpha: 0.6) : AppColors.bgDark.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: solid ? Colors.transparent : color.withValues(alpha: 0.3)),
         boxShadow: glow ? [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 8)] : [],
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         if (icon != null) ...[Icon(icon, size: 13, color: color), const SizedBox(width: 4)],
-        Text(text, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
+        Text(text, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: solid ? Colors.white : color)),
       ]),
     );
   }
