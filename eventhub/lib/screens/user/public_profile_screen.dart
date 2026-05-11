@@ -114,7 +114,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                       CircleAvatar(
                         radius: 40,
                         backgroundColor: AppColors.accent,
-                        backgroundImage: logo != null ? NetworkImage('${ApiConstants.imageUrl}$logo') : null,
+                        backgroundImage: logo != null ? NetworkImage(ApiConstants.buildImageUrl(logo)!) : null,
                         child: logo == null ? Text(name[0].toUpperCase(), style: const TextStyle(fontSize: 32, color: Colors.white)) : null,
                       ),
                       const SizedBox(height: 12),

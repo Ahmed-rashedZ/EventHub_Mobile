@@ -190,7 +190,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     if (e['image'] != null)
                       Positioned.fill(
                         child: Image.network(
-                          e['image'].toString().startsWith('http') ? e['image'] : '${ApiConstants.imageUrl}${e['image']}',
+                          ApiConstants.buildImageUrl(e['image'])!,
                           fit: BoxFit.cover,
                           colorBlendMode: BlendMode.darken,
                           color: AppColors.bgDark.withValues(alpha: 0.6),
@@ -489,8 +489,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           if (logo != null)
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: Image.network(logo, width: 42, height: 42, fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _avatarBox(name, tColor)),
+              child: Image.network(
+                ApiConstants.buildImageUrl(logo)!,
+                width: 42,
+                height: 42,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _avatarBox(name, tColor),
+              ),
             )
           else _avatarBox(name, tColor),
           const SizedBox(width: 10),

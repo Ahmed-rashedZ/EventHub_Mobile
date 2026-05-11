@@ -38,5 +38,20 @@ class AppColors {
 class ApiConstants {
   // Since you are using USB, run: adb reverse tcp:8000 tcp:8000
   static const String baseUrl = 'http://127.0.0.1:8000/api';
-  static const String imageUrl = 'http://127.0.0.1:8000/storage/';
+  static const String imageUrl = 'http://127.0.0.1:8000/api/storage-proxy/';
+
+  /// Safely builds a full image URL handling slashes and absolute URLs
+  static String? buildImageUrl(dynamic path) {
+    if (path == null || path.toString().isEmpty) return null;
+    final String pathStr = path.toString();
+    
+    // If it's already a full URL, return it
+    if (pathStr.startsWith('http')) return pathStr;
+    
+    // Clean up slashes: remove leading slash from path and ensure base has trailing slash
+    final String cleanPath = pathStr.startsWith('/') ? pathStr.substring(1) : pathStr;
+    final String base = imageUrl.endsWith('/') ? imageUrl : '$imageUrl/';
+    
+    return '$base$cleanPath';
+  }
 }

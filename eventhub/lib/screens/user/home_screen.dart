@@ -86,8 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // 3. Search filter
       if (_search.isNotEmpty) {
         final q = _search.toLowerCase();
-        final t = '${e['title'] ?? ''} ${e['description'] ?? ''} ${e['venue']?['name'] ?? ''}'
-            .toLowerCase();
+        final t = '${e['title'] ?? ''} ${e['venue']?['name'] ?? ''}'.toLowerCase();
         if (!t.contains(q)) {
           return false;
         }
@@ -281,7 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final isEnded = endDt != null && endDt.isBefore(now);
     final isLive = !isEnded && dt.isBefore(now);
 
-    final imageUrl = image != null ? (image.toString().startsWith('http') ? image : '${ApiConstants.imageUrl}$image') : null;
+    final imageUrl = ApiConstants.buildImageUrl(image);
 
     return GestureDetector(
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EventDetailsScreen(event: event))),
