@@ -161,6 +161,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final isStarted = dt.isBefore(DateTime.now());
     final canRate = _hasTicket && isStarted;
 
+    final totalCapacity = e['capacity'] ?? 0;
+    final bookedTickets = e['tickets_count'] ?? 0;
+    final double progress = totalCapacity > 0 ? (bookedTickets / totalCapacity).clamp(0.0, 1.0) : 0.0;
+    final isFull = bookedTickets >= totalCapacity && totalCapacity > 0;
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -308,7 +313,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     ),
                   ],
                   const SizedBox(height: 12),
-                  _buildInfoCard(Icons.people_outline, 'Capacity', '${e['capacity']} attendees'),
+                  _buildCapacityProgressBar(bookedTickets, totalCapacity, progress, isFull),
                   if (e['creator'] != null) ...[
                     const SizedBox(height: 12),
                     GestureDetector(
@@ -442,6 +447,57 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           ),
         ),
       ) : null,
+    );
+  }
+
+  Widget _buildCapacityProgressBar(int booked, int total, double progress, bool isFull) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.bgCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(children: [
+                Icon(Icons.people_outline, color: AppColors.accent, size: 20),
+                const SizedBox(width: 8),
+                const Text('Capacity & Bookings', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+              ]),
+              Text(
+                '$booked / $total',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: isFull ? AppColors.danger : AppColors.accent,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 10,
+              backgroundColor: AppColors.border,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                isFull ? AppColors.danger : (progress > 0.8 ? AppColors.warning : AppColors.success),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            isFull ? 'Sold Out!' : '${(progress * 100).toInt()}% Booked',
+            style: TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
     );
   }
 
