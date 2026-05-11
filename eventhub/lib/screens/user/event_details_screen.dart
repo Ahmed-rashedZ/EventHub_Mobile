@@ -1,7 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import '../../providers/ticket_provider.dart';
 import '../../providers/event_provider.dart';
+import '../../providers/auth_provider.dart';
 
 import '../../utils/constants.dart';
 import '../../widgets/gradient_button.dart';
@@ -150,8 +155,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     final formattedDate = '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
     final formattedTime = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-    final venueName = e['venue']?['name'] ?? e['location'] ?? 'TBA';
-    final venueLocation = e['venue']?['location'] ?? '';
+    final venueName = e['venue']?['name'] ?? e['external_venue_name'] ?? e['location'] ?? 'TBA';
+    final venueLocation = e['venue']?['location'] ?? e['external_venue_location'] ?? '';
     final sponsors = (e['sponsors'] as List<dynamic>?) ?? [];
     final isStarted = dt.isBefore(DateTime.now());
     final canRate = _hasTicket && isStarted;
@@ -285,7 +290,23 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 children: [
                   _buildInfoCard(Icons.calendar_today, 'Date & Time', '$formattedDate at $formattedTime'),
                   const SizedBox(height: 12),
-                  _buildInfoCard(Icons.location_on_outlined, 'Venue', '$venueName${venueLocation.isNotEmpty ? '\n$venueLocation' : ''}'),
+                  _buildInfoCard(Icons.location_on_outlined, 'Venue', venueName),
+                  if (venueLocation.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: () async {
+                        final uri = Uri.parse(venueLocation);
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        }
+                      },
+                      child: _buildInfoCard(
+                        Icons.map_outlined,
+                        'Location',
+                        'Open in Google Maps',
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   _buildInfoCard(Icons.people_outline, 'Capacity', '${e['capacity']} attendees'),
                   if (e['creator'] != null) ...[
