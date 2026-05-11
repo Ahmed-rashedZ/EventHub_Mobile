@@ -5,7 +5,7 @@ import '../services/api_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final ApiService _api = ApiService();
-  
+
   bool _isAuthenticated = false;
   bool _isLoading = true;
   Map<String, dynamic>? _user;
@@ -50,7 +50,7 @@ class AuthProvider extends ChangeNotifier {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', data['token']);
         await prefs.setString('user', jsonEncode(data['user']));
-        
+
         _user = data['user'];
         _isAuthenticated = true;
         notifyListeners();
@@ -136,39 +136,45 @@ class AuthProvider extends ChangeNotifier {
       final res = await _api.post('/password/forgot', {'email': email});
       final data = jsonDecode(res.body);
       if (res.statusCode == 200) return null; // Success
-      
+
       return data['message'] ?? 'Failed to send OTP';
     } catch (e) {
       return 'Connection error.';
     }
   }
 
-  Future<String?> verifyCode(String email, String code) async {
+  Future<Map<String, dynamic>> verifyCode(String email, String code) async {
     try {
       final res = await _api.post('/password/verify-code', {
         'email': email,
         'code': code,
       });
       final data = jsonDecode(res.body);
-      if (res.statusCode == 200) return null; // Success
-      
-      return data['message'] ?? 'Invalid or expired OTP';
+      if (res.statusCode == 200) {
+        return {'success': true, 'reset_token': data['reset_token']};
+      }
+
+      return {'success': false, 'message': data['message'] ?? 'Invalid or expired OTP'};
     } catch (e) {
-      return 'Connection error.';
+      return {'success': false, 'message': 'Connection error.'};
     }
   }
 
-  Future<String?> resetPassword(String email, String code, String password) async {
+  Future<String?> resetPassword(
+    String email,
+    String code,
+    String password,
+  ) async {
     try {
       final res = await _api.post('/password/reset', {
         'email': email,
-        'code': code,
+        'reset_token': code,
         'password': password,
         'password_confirmation': password,
       });
       final data = jsonDecode(res.body);
       if (res.statusCode == 200) return null; // Success
-      
+
       if (data['errors'] != null) {
         final errors = data['errors'] as Map<String, dynamic>;
         final firstErrorList = errors.values.first;

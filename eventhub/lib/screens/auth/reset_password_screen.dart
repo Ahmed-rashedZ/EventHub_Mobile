@@ -10,7 +10,11 @@ class ResetPasswordScreen extends StatefulWidget {
   final String email;
   final String code;
 
-  const ResetPasswordScreen({super.key, required this.email, required this.code});
+  const ResetPasswordScreen({
+    super.key,
+    required this.email,
+    required this.code,
+  });
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -61,7 +65,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
-      
+
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -114,7 +118,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
-              
+
               _buildLabel('NEW PASSWORD'),
               const SizedBox(height: 8),
               TextField(
@@ -126,17 +130,20 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 ).copyWith(
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePass ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      _obscurePass
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
                       color: AppColors.textMuted,
                       size: 20,
                     ),
-                    onPressed: () => setState(() => _obscurePass = !_obscurePass),
+                    onPressed: () =>
+                        setState(() => _obscurePass = !_obscurePass),
                   ),
                 ),
                 obscureText: _obscurePass,
               ),
               const SizedBox(height: 20),
-              
+
               _buildLabel('CONFIRM PASSWORD'),
               const SizedBox(height: 8),
               TextField(
@@ -148,16 +155,20 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 ).copyWith(
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscureConfirmPass ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      _obscureConfirmPass
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
                       color: AppColors.textMuted,
                       size: 20,
                     ),
-                    onPressed: () => setState(() => _obscureConfirmPass = !_obscureConfirmPass),
+                    onPressed: () => setState(
+                      () => _obscureConfirmPass = !_obscureConfirmPass,
+                    ),
                   ),
                 ),
                 obscureText: _obscureConfirmPass,
               ),
-              
+
               const SizedBox(height: 32),
               GradientButton(
                 text: 'Reset Password',
@@ -184,7 +195,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  InputDecoration _inputDecoration({required String hint, required IconData icon}) {
+  InputDecoration _inputDecoration({
+    required String hint,
+    required IconData icon,
+  }) {
     return InputDecoration(
       hintText: hint,
       hintStyle: TextStyle(color: AppColors.textMuted.withValues(alpha: 0.5)),

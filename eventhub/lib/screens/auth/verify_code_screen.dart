@@ -29,18 +29,21 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
     setState(() => _isLoading = true);
 
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    final error = await auth.verifyCode(widget.email, code);
+    final result = await auth.verifyCode(widget.email, code);
 
     if (!mounted) return;
     setState(() => _isLoading = false);
 
-    if (error != null) {
-      _showError(error);
+    if (result['success'] == false) {
+      _showError(result['message']);
     } else {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => ResetPasswordScreen(email: widget.email, code: code),
+          builder: (_) => ResetPasswordScreen(
+            email: widget.email,
+            code: result['reset_token'],
+          ),
         ),
       );
     }
@@ -76,11 +79,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
               const SizedBox(height: 32),
               const Text(
                 'Verify Code',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
@@ -92,12 +91,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
               const SizedBox(height: 48),
               const Text(
                 'VERIFICATION CODE',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textMuted,
-                  letterSpacing: 0.8,
-                ),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted, letterSpacing: 0.8),
               ),
               const SizedBox(height: 8),
               TextField(
@@ -110,10 +104,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                   hintStyle: TextStyle(color: AppColors.textMuted.withValues(alpha: 0.5), letterSpacing: 8),
                   filled: true,
                   fillColor: AppColors.bgCard,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   counterText: "",
                 ),
                 keyboardType: TextInputType.number,
