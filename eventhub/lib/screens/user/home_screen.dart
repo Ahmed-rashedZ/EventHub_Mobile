@@ -57,12 +57,40 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<dynamic> _filteredEvents(List<dynamic> events) {
+    final now = DateTime.now();
     return events.where((e) {
-      if (_selectedCategory != 'All' && _guessCategory(e) != _selectedCategory) { return false; }
+      // 1. Time filter: Only show upcoming or live events (not ended)
+      final endStr = e['end_time'];
+      if (endStr != null) {
+        try {
+          final endDt = DateTime.parse(endStr);
+          if (endDt.isBefore(now)) return false;
+        } catch (_) {}
+      } else {
+        // Fallback: if no end_time, check start_time. 
+        // If it started more than 24h ago, assume it's ended.
+        final startStr = e['start_time'];
+        if (startStr != null) {
+          try {
+            final startDt = DateTime.parse(startStr);
+            if (startDt.add(const Duration(hours: 24)).isBefore(now)) return false;
+          } catch (_) {}
+        }
+      }
+
+      // 2. Category filter
+      if (_selectedCategory != 'All' &&
+          _guessCategory(e) != _selectedCategory) {
+        return false;
+      }
+      // 3. Search filter
       if (_search.isNotEmpty) {
         final q = _search.toLowerCase();
-        final t = '${e['title'] ?? ''} ${e['description'] ?? ''} ${e['venue']?['name'] ?? ''}'.toLowerCase();
-        if (!t.contains(q)) { return false; }
+        final t = '${e['title'] ?? ''} ${e['description'] ?? ''} ${e['venue']?['name'] ?? ''}'
+            .toLowerCase();
+        if (!t.contains(q)) {
+          return false;
+        }
       }
       return true;
     }).toList();
