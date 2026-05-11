@@ -39,6 +39,18 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     _avgRating = double.tryParse(widget.event['average_rating']?.toString() ?? '0') ?? 0;
     _loadReviews();
     _checkTicket();
+    _refreshEventData();
+  }
+
+  void _refreshEventData() async {
+    final provider = Provider.of<EventProvider>(context, listen: false);
+    final fullEvent = await provider.fetchEventDetail(widget.event['id']);
+    if (fullEvent != null && mounted) {
+      setState(() {
+        widget.event['tickets_count'] = fullEvent['tickets_count'];
+        widget.event['sponsors'] = fullEvent['sponsors'];
+      });
+    }
   }
 
   @override
@@ -78,6 +90,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
     if (error == null) {
       setState(() => _hasTicket = true);
+      _refreshEventData(); // Refresh to update booked count
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Row(children: [
