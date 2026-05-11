@@ -59,10 +59,19 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     super.dispose();
   }
 
-  void _checkTicket() {
-    final tickets = Provider.of<TicketProvider>(context, listen: false).myTickets;
+  void _checkTicket() async {
+    final provider = Provider.of<TicketProvider>(context, listen: false);
+    // If tickets list is empty, fetch it first (happens on app restart)
+    if (provider.myTickets.isEmpty) {
+      await provider.fetchMyTickets();
+    }
+    final tickets = provider.myTickets;
     final eventId = widget.event['id'];
-    _hasTicket = tickets.any((t) => t['event']?['id'].toString() == eventId.toString());
+    if (mounted) {
+      setState(() {
+        _hasTicket = tickets.any((t) => t['event']?['id'].toString() == eventId.toString());
+      });
+    }
   }
 
   void _loadReviews() async {
