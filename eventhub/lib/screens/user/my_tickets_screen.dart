@@ -138,7 +138,6 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
   Widget _buildTicketCard(Map<String, dynamic> ticket, {required bool isUpcoming}) {
     final event = ticket['event'] as Map<String, dynamic>? ?? {};
     final title = event['title']?.toString() ?? 'Unknown Event';
-    final venueName = event['venue']?['name']?.toString() ?? event['location']?.toString() ?? 'TBA';
     final qrCode = ticket['qr_code']?.toString() ?? '';
     final ticketId = ticket['id']?.toString() ?? '';
     final status = ticket['status']?.toString() ?? 'active';
@@ -147,128 +146,109 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
     final dateStr = event['start_time'];
     DateTime dt;
     try { dt = dateStr != null ? DateTime.parse(dateStr) : DateTime.now(); } catch (_) { dt = DateTime.now(); }
-    final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    final timeStr = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    final dateDisplay = '${dt.day}/${dt.month}/${dt.year}';
 
-    final statusColor = isUsed ? AppColors.success : (isUpcoming ? AppColors.accent2 : AppColors.textMuted);
-    final statusText = isUsed ? 'ATTENDED' : (isUpcoming ? 'ACTIVE' : 'EXPIRED');
+    final isConfirmed = status == 'confirmed' || status == 'valid' || (isUpcoming && !isUsed);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
+        gradient: LinearGradient(
+          colors: isConfirmed 
+            ? [const Color(0xFF2C3544), const Color(0xFF0F141E)] 
+            : [const Color(0xFF1A1F26), const Color(0xFF0A0C10)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 12, offset: const Offset(0, 4))
+        ],
       ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Date block
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: AppColors.bgDark,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Column(children: [
-                    Text(months[dt.month - 1].toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.accent2)),
-                    const SizedBox(height: 2),
-                    Text(dt.day.toString(), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white, height: 1)),
-                  ]),
-                ),
-                const SizedBox(width: 16),
-                // Details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.3, color: Colors.white), maxLines: 2, overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 8),
-                      Row(children: [
-                        Icon(Icons.access_time_rounded, size: 14, color: AppColors.textMuted.withValues(alpha: 0.8)),
-                        const SizedBox(width: 5),
-                        Text(timeStr, style: TextStyle(fontSize: 13, color: AppColors.textMuted.withValues(alpha: 0.9), fontWeight: FontWeight.w500)),
-                      ]),
-                      const SizedBox(height: 4),
-                      Row(children: [
-                        Icon(Icons.location_on_outlined, size: 14, color: AppColors.textMuted.withValues(alpha: 0.8)),
-                        const SizedBox(width: 5),
-                        Expanded(child: Text(venueName, style: TextStyle(fontSize: 13, color: AppColors.textMuted.withValues(alpha: 0.9), fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis)),
-                      ]),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          // Ticket Divider with cutouts
-          Row(
-            children: [
-              Container(width: 10, height: 20, decoration: const BoxDecoration(color: AppColors.bgDark, borderRadius: BorderRadius.horizontal(right: Radius.circular(20)))),
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final boxWidth = constraints.constrainWidth();
-                    const dashWidth = 6.0;
-                    final dashCount = (boxWidth / (2 * dashWidth)).floor();
-                    return Flex(
-                      direction: Axis.horizontal,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: List.generate(dashCount, (_) => Container(width: dashWidth, height: 1.5, color: AppColors.borderLight)),
-                    );
-                  },
-                ),
-              ),
-              Container(width: 10, height: 20, decoration: const BoxDecoration(color: AppColors.bgDark, borderRadius: BorderRadius.horizontal(left: Radius.circular(20)))),
-            ],
-          ),
-
-          // Bottom Action Area
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-                  ),
-                  child: Text(statusText, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: statusColor, letterSpacing: 0.5)),
-                ),
-                const SizedBox(width: 12),
-                Text('#$ticketId', style: const TextStyle(fontSize: 13, color: AppColors.textMuted, fontWeight: FontWeight.w600)),
-                const Spacer(),
-                if (qrCode.isNotEmpty && !isUsed)
-                  GestureDetector(
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => QRCodeScreen(qrCode: qrCode, eventTitle: title, ticketId: ticketId, isUsed: isUsed))),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: AppColors.bgCard2,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.qr_code_2_rounded, size: 18, color: Colors.white),
-                          SizedBox(width: 6),
-                          Text('View QR', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
-                        ],
-                      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            (isUsed ? 'ATTENDED' : (isUpcoming ? 'ACTIVE' : 'EXPIRED')).toUpperCase(),
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white), maxLines: 2, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 4),
+                        Text('Date: $dateDisplay', style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.8))),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(context, MaterialPageRoute(
+                              builder: (_) => QRCodeScreen(
+                                qrCode: qrCode,
+                                eventTitle: title,
+                                ticketId: ticketId,
+                                isUsed: isUsed,
+                              ),
+                            ));
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white.withValues(alpha: 0.2),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            minimumSize: const Size(0, 34),
+                          ),
+                          child: Text(isUsed ? 'View Summary' : 'View Tickets', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
                     ),
                   ),
-              ],
+                  const SizedBox(width: 16),
+                  // QR Code Placeholder
+                  Container(
+                    width: 80,
+                    height: 80,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10)],
+                    ),
+                    child: Icon(Icons.qr_code_2_rounded, size: 64, color: isUsed ? Colors.grey : Colors.black),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            // Perforation effect
+            Positioned(
+              right: 110,
+              top: -10,
+              bottom: -10,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: List.generate(10, (index) => Container(
+                  width: 5, height: 5,
+                  decoration: const BoxDecoration(color: AppColors.bgDark, shape: BoxShape.circle),
+                )),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

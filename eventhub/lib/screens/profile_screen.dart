@@ -8,6 +8,7 @@ import '../providers/ticket_provider.dart';
 import '../services/api_service.dart';
 import '../utils/constants.dart';
 import 'auth/login_screen.dart';
+import 'user/my_tickets_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -21,6 +22,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _loadingNotifications = false;
   int _unreadCount = 0;
   bool _isUploadingImage = false;
+  List<String> _selectedInterests = [];
+  final List<String> _allCategories = ['Technical', 'Workshop', 'Conference', 'Seminar', 'Cultural', 'Business', 'AI', 'Networking', 'FinTech', 'Innovation', 'Sustainability', 'Entrepreneurship'];
 
   @override
   void initState() {
@@ -97,7 +100,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
 
       if (res.statusCode == 200) {
-        await auth.checkAuth();
+        final data = json.decode(res.body);
+        if (data['user'] != null) {
+          await auth.updateUser(data['user']);
+        }
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Profile picture updated!'), backgroundColor: AppColors.success),
@@ -124,255 +130,268 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
-    final tickets = Provider.of<TicketProvider>(context);
+    final ticketProv = Provider.of<TicketProvider>(context);
     final user = auth.user;
-    final name = user?['name'] ?? 'User';
-    final email = user?['email'] ?? '';
-    final role = user?['role'] ?? 'User';
+    final name = auth.userName;
+    final userImage = user?['profile']?['logo'];
 
     return Scaffold(
+      backgroundColor: AppColors.bgDark,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(vertical: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Header with back if pushed, and notifications
-              Row(
-                children: [
-                  if (Navigator.of(context).canPop())
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.bgCard,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: const Icon(Icons.arrow_back, size: 20, color: AppColors.textMuted),
-                      ),
-                    ),
-                  const Spacer(),
-                  // Notifications bell
-                  GestureDetector(
-                    onTap: () => _showNotificationsSheet(context),
-                    child: Stack(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppColors.bgCard,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: const Icon(Icons.notifications_outlined, size: 22, color: AppColors.textMuted),
-                        ),
-                        if (_unreadCount > 0)
-                          Positioned(
-                            right: 4,
-                            top: 4,
-                            child: Container(
-                              width: 18,
-                              height: 18,
-                              decoration: BoxDecoration(
-                                color: AppColors.danger,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: AppColors.bgDark, width: 2),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  _unreadCount > 9 ? '9+' : _unreadCount.toString(),
-                                  style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              // Profile header
-              SizedBox(
-                height: 200,
-                child: Stack(
-                  alignment: Alignment.topCenter,
-                  clipBehavior: Clip.none,
+              // ── Top Bar ──
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Blurred background header
-                    Container(
-                      height: 140,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        gradient: LinearGradient(
-                          colors: [AppColors.accent.withValues(alpha: 0.3), AppColors.accent2.withValues(alpha: 0.1)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
+                    CircleAvatar(
+                      radius: 18,
+                      backgroundImage: userImage != null ? NetworkImage(ApiConstants.buildImageUrl(userImage)!) : null,
+                      backgroundColor: AppColors.accent.withValues(alpha: 0.1),
+                      child: userImage == null ? const Icon(Icons.person, size: 20) : null,
                     ),
-                    Positioned(
-                      top: 90,
+                    GestureDetector(
+                      onTap: () => _showNotificationsSheet(context),
                       child: Stack(
-                        clipBehavior: Clip.none,
                         children: [
-                          Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              gradient: AppColors.accentGradient,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.bgDark, width: 4),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.accent.withValues(alpha: 0.4),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                              image: user?['profile']?['logo'] != null
-                                  ? DecorationImage(
-                                      image: NetworkImage(ApiConstants.buildImageUrl(user!['profile']['logo'])!),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : null,
-                            ),
-                            child: user?['profile']?['logo'] == null
-                                ? Center(
-                                    child: Text(
-                                      name.isNotEmpty ? name[0].toUpperCase() : 'U',
-                                      style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w800, color: Colors.white),
-                                    ),
-                                  )
-                                : null,
-                          ),
-                          if (_isUploadingImage)
-                            Positioned.fill(
+                          const Icon(Icons.bolt_rounded, color: AppColors.accent2, size: 28),
+                          if (_unreadCount > 0)
+                            Positioned(
+                              right: 0, top: 0,
                               child: Container(
-                                decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5), shape: BoxShape.circle),
-                                child: const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)),
+                                width: 8, height: 8,
+                                decoration: const BoxDecoration(color: AppColors.danger, shape: BoxShape.circle),
                               ),
                             ),
-                          // Edit Icon Button
-                          Positioned(
-                            right: 0,
-                            bottom: 0,
-                            child: GestureDetector(
-                              onTap: () => _pickAndUploadImage(auth),
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: AppColors.accent,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: AppColors.bgDark, width: 3),
-                                ),
-                                child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
-                              ),
-                            ),
-                          ),
                         ],
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 10), // reduced space since header is taller now
+              const SizedBox(height: 20),
 
-              Text(name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
-                ),
-                child: Text(role, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.accent)),
-              ),
-              const SizedBox(height: 24),
-
-              // Stats row
-              Row(
+              // ── Profile Header ──
+              Stack(
                 children: [
-                  _buildStatCard(icon: Icons.confirmation_number_outlined, label: 'Tickets', value: tickets.myTickets.length.toString(), color: AppColors.accent),
-                  const SizedBox(width: 12),
-                  _buildStatCard(icon: Icons.event_available, label: 'Attended', value: tickets.totalAttended.toString(), color: AppColors.success),
-                  const SizedBox(width: 12),
-                  _buildStatCard(icon: Icons.upcoming, label: 'Upcoming', value: tickets.upcomingTickets.length.toString(), color: AppColors.accent2),
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.accent.withValues(alpha: 0.2), width: 4),
+                    ),
+                    child: CircleAvatar(
+                      radius: 56,
+                      backgroundImage: userImage != null ? NetworkImage(ApiConstants.buildImageUrl(userImage)!) : null,
+                      backgroundColor: AppColors.accent.withValues(alpha: 0.1),
+                      child: _isUploadingImage 
+                        ? const CircularProgressIndicator(color: AppColors.accent)
+                        : (userImage == null ? Text(name[0], style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold)) : null),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      onTap: () => _pickAndUploadImage(auth),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.accent2,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.bgDark, width: 3),
+                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))],
+                        ),
+                        child: const Icon(Icons.edit_rounded, size: 18, color: Colors.white),
+                      ),
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 24),
-
-              // Info section
+              const SizedBox(height: 16),
+              Text(name, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white)),
+              const Text('Tech Enthusiast & Attendee', style: TextStyle(fontSize: 14, color: AppColors.textMuted)),
+              const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.bgCard,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border),
-                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4))],
+                  color: AppColors.accent2.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.accent2.withValues(alpha: 0.3)),
                 ),
-                child: Column(
-                  children: [
-                    _buildInfoItem(icon: Icons.email_outlined, title: 'Email Address', value: email),
-                    const Divider(color: AppColors.border, height: 1, indent: 60),
-                    _buildInfoItem(icon: Icons.badge_outlined, title: 'Account Type', value: role),
-                    const Divider(color: AppColors.border, height: 1, indent: 60),
-                    _buildInfoItem(icon: Icons.calendar_today_outlined, title: 'Member Since', value: _formatDate(user?['created_at'])),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.verified, size: 14, color: AppColors.accent2),
+                    SizedBox(width: 4),
+                    Text('Verified', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.accent2)),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
 
-              // Edit Profile button
-              GestureDetector(
-                onTap: () => _showEditProfileDialog(context, auth),
+              // ── Ticket History ──
+              _buildSectionTitle('Ticket History', 'View All', onTapAction: () {
+                // Navigate to MyTicketsScreen
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => MyTicketsScreen()));
+              }),
+              const SizedBox(height: 12),
+              ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: ticketProv.myTickets.length > 3 ? 3 : ticketProv.myTickets.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (_, i) => _buildTicketHistoryItem(ticketProv.myTickets[i]),
+              ),
+              const SizedBox(height: 32),
+
+              // ── Interests ──
+              _buildSectionTitle('Interests', 'Edit', onTapAction: () => _showInterestsDialog()),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  width: double.infinity,
+                  padding: _selectedInterests.isEmpty ? const EdgeInsets.all(20) : const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: AppColors.bgCard,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: AppColors.border),
                   ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.edit_outlined, color: Colors.white, size: 20),
-                      SizedBox(width: 8),
-                      Text('Edit Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
-                    ],
-                  ),
+                  child: _selectedInterests.isEmpty 
+                    ? const Center(child: Text('No interests added yet.', style: TextStyle(color: AppColors.textMuted, fontSize: 14)))
+                    : Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _selectedInterests.map((interest) => _buildInterestTag(interest)).toList(),
+                      ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 32),
 
-              // Logout button
-              GestureDetector(
-                onTap: () => _showLogoutDialog(context, auth),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: AppColors.danger.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.danger.withValues(alpha: 0.2)),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.logout, color: AppColors.danger, size: 20),
-                      SizedBox(width: 8),
-                      Text('Logout', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w600, fontSize: 15)),
-                    ],
-                  ),
+              const SizedBox(height: 32),
+
+              // ── Buttons ──
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    GestureDetector(
+                      onTap: () => _showEditProfileDialog(context, auth),
+                      child: Container(
+                        width: double.infinity,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.accent2.withValues(alpha: 0.5)),
+                          gradient: LinearGradient(
+                            colors: [AppColors.accent2.withValues(alpha: 0.1), Colors.transparent],
+                          ),
+                        ),
+                        child: const Center(child: Text('Edit Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.accent2))),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    GestureDetector(
+                      onTap: () => _showLogoutDialog(context, auth),
+                      child: Container(
+                        width: double.infinity,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
+                        ),
+                        child: const Center(child: Text('Log Out', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.danger))),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 100),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title, String? action, {VoidCallback? onTapAction}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
+          if (action != null)
+            GestureDetector(
+              onTap: onTapAction,
+              child: Text(action, style: const TextStyle(fontSize: 14, color: AppColors.accent2)),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTicketHistoryItem(Map<String, dynamic> ticket) {
+    final event = ticket['event'] ?? {};
+    final title = event['title'] ?? 'Untitled';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.bgCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: AppColors.accent.withValues(alpha: 0.1)),
+            child: const Icon(Icons.event_available_rounded, size: 20, color: AppColors.accent),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                const Text('May 15-17', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+              ],
+            ),
+          ),
+          const Icon(Icons.vpn_key_rounded, size: 18, color: AppColors.textMuted),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInterestTag(String label) {
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.bgCard,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Center(child: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
+    );
+  }
+
+  Widget _buildFavoriteItem(String label) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          const Icon(Icons.favorite_rounded, size: 18, color: AppColors.danger),
+          const SizedBox(width: 12),
+          Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+        ],
       ),
     );
   }
@@ -709,6 +728,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             );
                           },
                         ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── Interests Dialog ──────────────────────
+  void _showInterestsDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: AppColors.bgCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Select Interests', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: SingleChildScrollView(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _allCategories.map((cat) {
+                final isSelected = _selectedInterests.contains(cat);
+                return GestureDetector(
+                  onTap: () {
+                    setDialogState(() {
+                      if (isSelected) {
+                        _selectedInterests.remove(cat);
+                      } else {
+                        _selectedInterests.add(cat);
+                      }
+                    });
+                    setState(() {}); // Update main screen
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppColors.accent.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: isSelected ? AppColors.accent : AppColors.border),
+                    ),
+                    child: Text(
+                      cat,
+                      style: TextStyle(
+                        color: isSelected ? AppColors.accent : Colors.white,
+                        fontSize: 13,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Done', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold)),
             ),
           ],
         ),

@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color bgDark = Color(0xFF0D1117);
-  static const Color bgCard = Color(0xFF161B22);
-  static const Color bgCard2 = Color(0xFF1C2333);
-  static const Color border = Color(0x14FFFFFF);
-  static const Color borderLight = Color(0x22FFFFFF);
-  static const Color accent = Color(0xFF6E40F2);
+  static const Color bgDark = Color(0xFF070B14);
+  static const Color bgCard = Color(0xFF121826);
+  static const Color bgCard2 = Color(0xFF1A2235);
+  static const Color border = Color(0x1AFFFFFF);
+  static const Color borderLight = Color(0x33FFFFFF);
+  static const Color accent = Color(0xFF7B4DFF); // More vibrant purple
   static const Color accentDark = Color(0xFF5A32D8);
-  static const Color accent2 = Color(0xFF22D3EE);
-  static const Color success = Color(0xFF22C55E);
-  static const Color warning = Color(0xFFF59E0B);
-  static const Color danger = Color(0xFFEF4444);
+  static const Color accent2 = Color(0xFF00E5FF); // Vibrant Cyan
+  static const Color success = Color(0xFF00E676);
+  static const Color warning = Color(0xFFFFC107);
+  static const Color danger = Color(0xFFFF5252);
   static const Color textPrimary = Color(0xFFE6EDF3);
   static const Color textMuted = Color(0xFF7D8590);
   static const Color bgSidebar = Color(0xFF21262D);
 
   static const LinearGradient accentGradient = LinearGradient(
-    colors: [accent, accent2],
+    colors: [accent, Color(0xFF9D7AFF)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -37,8 +37,8 @@ class AppColors {
 
 class ApiConstants {
   // Since you are using USB, run: adb reverse tcp:8000 tcp:8000
-  static const String baseUrl = 'http://127.0.0.1:8000/api';
-  static const String imageUrl = 'http://127.0.0.1:8000/api/storage-proxy/';
+  static const String baseUrl = 'http://192.168.1.209:8000/api';
+  static const String imageUrl = 'http://192.168.1.209:8000/api/storage-proxy/';
 
   /// Safely builds a full image URL handling slashes and absolute URLs
   static String? buildImageUrl(dynamic path) {

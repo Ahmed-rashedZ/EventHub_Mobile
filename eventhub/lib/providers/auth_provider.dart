@@ -120,6 +120,14 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Update local user data and persist to SharedPreferences
+  Future<void> updateUser(Map<String, dynamic> newUser) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user', jsonEncode(newUser));
+    _user = newUser;
+    notifyListeners();
+  }
+
   /// Force logout on token expiration
   Future<void> forceLogout() async {
     final prefs = await SharedPreferences.getInstance();

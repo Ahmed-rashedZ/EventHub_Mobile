@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/event_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/ticket_provider.dart';
 import '../../utils/constants.dart';
 import 'event_details_screen.dart';
+import 'my_tickets_screen.dart';
+import 'qr_code_screen.dart';
+import 'search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -41,6 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<EventProvider>(context, listen: false).fetchEvents();
+      Provider.of<TicketProvider>(context, listen: false).fetchMyTickets();
     });
   }
 
@@ -99,340 +104,490 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
     final eventProv = Provider.of<EventProvider>(context);
-    final filtered = _filteredEvents(eventProv.events);
+    final ticketProv = Provider.of<TicketProvider>(context);
+    
     final name = auth.userName;
+    final userImage = auth.user?['profile']?['logo'];
+
+    final now = DateTime.now();
+    final liveEvents = eventProv.events.where((e) {
+      final startStr = e['start_time'];
+      final endStr = e['end_time'];
+      if (startStr == null) return false;
+      final startDt = DateTime.tryParse(startStr);
+      final endDt = endStr != null ? DateTime.tryParse(endStr) : startDt?.add(const Duration(hours: 4));
+      return startDt != null && startDt.isBefore(now) && (endDt != null && endDt.isAfter(now));
+    }).toList();
+
+    final upcomingEvents = eventProv.events.where((e) {
+      final startStr = e['start_time'];
+      if (startStr == null) return false;
+      final startDt = DateTime.tryParse(startStr);
+      return startDt != null && startDt.isAfter(now);
+    }).toList();
 
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       body: SafeArea(
-        child: Column(
-          children: [
-            // ── Header ──
-            Container(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await eventProv.fetchEvents();
+            await ticketProv.fetchMyTickets();
+          },
+          color: AppColors.accent,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Header ──
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
                     children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: AppColors.accent.withValues(alpha: 0.2),
+                        backgroundImage: userImage != null ? NetworkImage(ApiConstants.buildImageUrl(userImage)!) : null,
+                        child: userImage == null ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.accent)) : null,
+                      ),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Hello, $name 👋', style: TextStyle(fontSize: 14, color: AppColors.textMuted.withValues(alpha: 0.8), fontWeight: FontWeight.w500)),
-                            const SizedBox(height: 2),
-                            const Text('Discover Events', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                            Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
+                            Text('Welcome to $name.', style: TextStyle(fontSize: 13, color: AppColors.textMuted.withValues(alpha: 0.8))),
                           ],
                         ),
                       ),
-                      Container(
-                        width: 46, height: 46,
-                        decoration: BoxDecoration(
-                          gradient: AppColors.accentGradient,
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: [BoxShadow(color: AppColors.accent.withValues(alpha: 0.35), blurRadius: 12, offset: const Offset(0, 4))],
-                        ),
-                        child: Center(child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white))),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  // ── Search Bar ──
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.bgCard,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: TextField(
-                      onChanged: (v) => setState(() => _search = v),
-                      style: const TextStyle(fontSize: 15),
-                      decoration: InputDecoration(
-                        hintText: 'Search events, venues...',
-                        hintStyle: TextStyle(color: AppColors.textMuted.withValues(alpha: 0.5), fontSize: 14),
-                        prefixIcon: Icon(Icons.search_rounded, color: AppColors.textMuted.withValues(alpha: 0.5), size: 22),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  // ── Category Filters ──
-                  SizedBox(
-                    height: 40,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _categories.length,
-                      itemBuilder: (_, i) {
-                        final cat = _categories[i];
-                        final isActive = _selectedCategory == cat;
-                        final color = _catColors[cat] ?? AppColors.accent;
-                        return GestureDetector(
-                          onTap: () => setState(() => _selectedCategory = cat),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            margin: EdgeInsets.only(right: 8, left: i == 0 ? 0 : 0),
-                            padding: const EdgeInsets.symmetric(horizontal: 14),
-                            decoration: BoxDecoration(
-                              gradient: isActive ? LinearGradient(colors: [color, color.withValues(alpha: 0.7)]) : null,
-                              color: isActive ? null : AppColors.bgCard,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: isActive ? Colors.transparent : AppColors.border),
-                              boxShadow: isActive ? [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))] : [],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(_catIcons[cat], size: 15, color: isActive ? Colors.white : AppColors.textMuted),
-                                const SizedBox(width: 6),
-                                Text(cat, style: TextStyle(fontSize: 13, fontWeight: isActive ? FontWeight.w700 : FontWeight.w500, color: isActive ? Colors.white : AppColors.textMuted)),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  // ── Results count ──
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(color: AppColors.accent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                        child: Text('${filtered.length} Events', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.accent)),
-                      ),
-                      const Spacer(),
+                      // App Logo / Notifications
                       GestureDetector(
-                        onTap: () => eventProv.fetchEvents(),
+                        onTap: () {
+                          // Could open notifications or search
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen()));
+                        },
                         child: Container(
                           padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: AppColors.bgCard, shape: BoxShape.circle, border: Border.all(color: AppColors.border)),
-                          child: Icon(eventProv.isLoadingEvents ? Icons.hourglass_top : Icons.refresh_rounded, size: 18, color: AppColors.textMuted),
+                          decoration: BoxDecoration(
+                            color: AppColors.bgCard,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: const Icon(Icons.search_rounded, color: AppColors.accent2, size: 28), 
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            // ── Event List ──
-            Expanded(
-              child: eventProv.isLoadingEvents
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2.5))
-                  : eventProv.errorMessage != null
-                      ? _emptyState(eventProv.errorMessage!, Icons.wifi_off_rounded)
-                      : filtered.isEmpty
-                          ? _emptyState('No events found', Icons.event_busy_rounded)
-                          : RefreshIndicator(
-                              onRefresh: () => eventProv.fetchEvents(),
-                              color: AppColors.accent,
-                              backgroundColor: AppColors.bgCard,
-                              child: ListView.separated(
-                                padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-                                itemCount: filtered.length,
-                                separatorBuilder: (_, __) => const SizedBox(height: 16),
-                                itemBuilder: (_, i) => _buildEventCard(filtered[i]),
-                              ),
+                ),
+                const SizedBox(height: 24),
+
+                // ── Search & Filters ──
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: AppColors.bgCard,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: TextField(
+                            onChanged: (v) => setState(() => _search = v),
+                            decoration: InputDecoration(
+                              hintText: 'Search',
+                              prefixIcon: const Icon(Icons.search_rounded, size: 20, color: AppColors.textMuted),
+                              suffixIcon: const Icon(Icons.tune_rounded, size: 20, color: AppColors.textMuted),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                              fillColor: Colors.transparent,
                             ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _emptyState(String msg, IconData icon) {
-    return Center(
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(color: AppColors.bgCard, shape: BoxShape.circle),
-          child: Icon(icon, size: 48, color: AppColors.textMuted.withValues(alpha: 0.3)),
-        ),
-        const SizedBox(height: 16),
-        Text(msg, style: TextStyle(color: AppColors.textMuted.withValues(alpha: 0.6), fontSize: 15)),
-      ]),
-    );
-  }
-
-  Widget _buildEventCard(Map<String, dynamic> event) {
-    final title = event['title']?.toString() ?? 'Untitled';
-    final venueName = event['venue']?['name']?.toString() ?? 'TBA';
-    final desc = event['description']?.toString() ?? '';
-    final category = _guessCategory(event);
-    final catColor = _catColors[category] ?? AppColors.textMuted;
-    final avgRating = event['average_rating'];
-    final image = event['image'];
-    final capacity = event['capacity'];
-    final ticketsCount = event['tickets_count'];
-
-    final dateStr = event['start_time'];
-    DateTime dt;
-    try { dt = dateStr != null ? DateTime.parse(dateStr) : DateTime.now(); } catch (_) { dt = DateTime.now(); }
-    final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    final timeStr = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-    final now = DateTime.now();
-    final endStr = event['end_time'];
-    DateTime? endDt;
-    try { if (endStr != null) { endDt = DateTime.parse(endStr); } } catch (_) {}
-    final isEnded = endDt != null && endDt.isBefore(now);
-    final isLive = !isEnded && dt.isBefore(now);
-
-    final imageUrl = ApiConstants.buildImageUrl(image);
-
-    return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EventDetailsScreen(event: event))),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.bgCard,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 4))],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Edge-to-Edge Image Header ──
-            if (imageUrl != null)
-              SizedBox(
-                height: 160,
-                width: double.infinity,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: AppColors.bgCard,
-                        child: Icon(_catIcons[category], size: 48, color: catColor.withValues(alpha: 0.3)),
-                      ),
-                    ),
-                    _buildBadgesOverlay(category, catColor, avgRating, isEnded, isLive),
-                  ],
-                ),
-              )
-            else
-              Container(
-                height: 120,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppColors.bgCard, catColor.withValues(alpha: 0.15)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    Center(child: Icon(_catIcons[category], size: 48, color: catColor.withValues(alpha: 0.3))),
-                    _buildBadgesOverlay(category, catColor, avgRating, isEnded, isLive),
-                  ],
-                ),
-              ),
-
-            // ── Content ──
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Date Calendar Box
-                  Container(
-                    width: 54,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.bgDark,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(months[dt.month - 1].toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.accent2)),
-                        const SizedBox(height: 2),
-                        Text(dt.day.toString(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white, height: 1.1)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  // Details
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.3, color: Colors.white), maxLines: 2, overflow: TextOverflow.ellipsis),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(Icons.access_time_rounded, size: 14, color: AppColors.textMuted.withValues(alpha: 0.8)),
-                            const SizedBox(width: 4),
-                            Text(timeStr, style: TextStyle(fontSize: 13, color: AppColors.textMuted.withValues(alpha: 0.9), fontWeight: FontWeight.w500)),
-                            const SizedBox(width: 12),
-                            Icon(Icons.location_on_outlined, size: 14, color: AppColors.textMuted.withValues(alpha: 0.8)),
-                            const SizedBox(width: 4),
-                            Expanded(child: Text(venueName, style: TextStyle(fontSize: 13, color: AppColors.textMuted.withValues(alpha: 0.9), fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis)),
-                          ],
+                          ),
                         ),
-                        if (capacity != null) ...[
-                          const SizedBox(height: 6),
-                          Row(
+                      ),
+                      const SizedBox(width: 12),
+                      GestureDetector(
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen())),
+                        child: Container(
+                          height: 50,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: AppColors.bgCard,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: const Row(
                             children: [
-                              Icon(Icons.people_outline, size: 14, color: AppColors.textMuted.withValues(alpha: 0.8)),
-                              const SizedBox(width: 4),
-                              Text('${ticketsCount ?? 0} / $capacity Attendees', style: TextStyle(fontSize: 12, color: AppColors.textMuted.withValues(alpha: 0.9))),
+                              Text('Filters', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                              SizedBox(width: 8),
+                              Icon(Icons.tune_rounded, size: 18),
                             ],
                           ),
-                        ]
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 28),
+
+                // ── Live Events Section ──
+                if (liveEvents.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Text('Live Events', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(4)),
+                              child: const Text('LIVE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 160,
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: liveEvents.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      itemBuilder: (_, i) => _buildLiveEventCard(liveEvents[i]),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
                 ],
-              ),
+
+                // ── Upcoming Events Section ──
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: const Text('Upcoming Events', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
+                ),
+                const SizedBox(height: 16),
+                eventProv.isLoadingEvents
+                    ? const Center(child: CircularProgressIndicator())
+                    : upcomingEvents.isEmpty
+                        ? _emptyStateHorizontal('No upcoming events')
+                        : GridView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 0.65,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                            ),
+                            itemCount: upcomingEvents.length,
+                            itemBuilder: (_, i) => _buildUpcomingEventCard(upcomingEvents[i]),
+                          ),
+                const SizedBox(height: 28),
+
+                const SizedBox(height: 80), // Space for bottom bar
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildBadgesOverlay(String category, Color catColor, dynamic avgRating, bool isEnded, bool isLive) {
-    return Positioned(
-      top: 12, left: 12, right: 12,
-      child: Row(
+  Widget _emptyStateHorizontal(String msg) {
+    return Container(
+      width: 200,
+      margin: const EdgeInsets.only(left: 20),
+      decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.border)),
+      child: Center(child: Text(msg, style: TextStyle(color: AppColors.textMuted, fontSize: 13))),
+    );
+  }
+
+  Widget _buildLiveEventCard(Map<String, dynamic> event) {
+    final title = event['title'] ?? 'Untitled';
+    final venueName = event['venue']?['name'] ?? 'TBA';
+    final imageUrl = ApiConstants.buildImageUrl(event['image']);
+
+    return InkWell(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EventDetailsScreen(event: event))),
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        width: 280,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          image: DecorationImage(
+            image: imageUrl != null ? NetworkImage(imageUrl) : const AssetImage('assets/placeholder.jpg') as ImageProvider,
+            fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.4), BlendMode.darken),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.location_on_rounded, size: 14, color: Colors.white70),
+                  const SizedBox(width: 4),
+                  Expanded(child: Text(venueName, style: const TextStyle(fontSize: 12, color: Colors.white70), overflow: TextOverflow.ellipsis)),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTicketCard(Map<String, dynamic> ticket) {
+    final event = ticket['event'] ?? {};
+    final title = event['title'] ?? 'Untitled';
+    final date = event['start_time'] != null ? DateTime.tryParse(event['start_time']) : null;
+    final dateStr = date != null ? '${date.day}/${date.month}' : 'TBA'; 
+    final status = ticket['status'] ?? 'pending';
+    final isConfirmed = status == 'confirmed' || status == 'valid';
+
+    return Container(
+      width: 300,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isConfirmed 
+            ? [const Color(0xFF00B4DB), const Color(0xFF0083B0)] 
+            : [const Color(0xFF434343), const Color(0xFF000000)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Stack(
         children: [
-          _chip(category, catColor, icon: _catIcons[category], solid: true),
-          const Spacer(),
-          if (avgRating != null && (avgRating is num ? avgRating > 0 : double.tryParse(avgRating.toString()) != null && double.parse(avgRating.toString()) > 0))
-            _chip(double.parse(avgRating.toString()).toStringAsFixed(1), AppColors.warning, icon: Icons.star_rounded, solid: true),
-          if (avgRating != null && (avgRating is num ? avgRating > 0 : double.tryParse(avgRating.toString()) != null && double.parse(avgRating.toString()) > 0))
-            const SizedBox(width: 6),
-          if (isEnded)
-            _chip('Ended', AppColors.textMuted, solid: true)
-          else if (isLive)
-            _chip('Live', AppColors.success, glow: true, solid: true)
-          else
-            _chip('Upcoming', AppColors.accent2, solid: true),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          status.toUpperCase(),
+                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white), maxLines: 2, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 4),
+                      Text('Date: $dateStr', style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
+                      const Spacer(),
+                      ElevatedButton(
+                        onPressed: () {
+                          final qrCode = ticket['qr_code']?.toString() ?? '';
+                          final ticketId = ticket['id']?.toString() ?? '';
+                          final isUsed = ticket['status'] == 'used';
+                          Navigator.push(context, MaterialPageRoute(
+                            builder: (_) => QRCodeScreen(
+                              qrCode: qrCode,
+                              eventTitle: title,
+                              ticketId: ticketId,
+                              isUsed: isUsed,
+                            ),
+                          ));
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.2),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          minimumSize: const Size(0, 32),
+                        ),
+                        child: const Text('View Tickets', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // QR Code Placeholder
+                Container(
+                  width: 80,
+                  height: 80,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.qr_code_2_rounded, size: 64, color: Colors.black),
+                ),
+              ],
+            ),
+          ),
+          // Perforation effect
+          Positioned(
+            left: 190,
+            top: -10,
+            bottom: -10,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: List.generate(8, (index) => Container(
+                width: 4, height: 4,
+                decoration: const BoxDecoration(color: AppColors.bgDark, shape: BoxShape.circle),
+              )),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _chip(String text, Color color, {IconData? icon, bool glow = false, bool solid = false}) {
+  Widget _buildUpcomingEventCard(Map<String, dynamic> event) {
+    final title = event['title'] ?? 'Untitled';
+    final venueName = event['venue']?['name'] ?? 'TBA';
+    final startStr = event['start_time'];
+    final date = startStr != null ? DateTime.tryParse(startStr) : null;
+    final dateStr = date != null ? '${date.day}/${date.month}' : 'TBA';
+    final imageUrl = ApiConstants.buildImageUrl(event['image']);
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: solid ? Colors.black.withValues(alpha: 0.6) : AppColors.bgDark.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: solid ? Colors.transparent : color.withValues(alpha: 0.3)),
-        boxShadow: glow ? [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 8)] : [],
+        color: AppColors.bgCard,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
       ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        if (icon != null) ...[Icon(icon, size: 13, color: color), const SizedBox(width: 4)],
-        Text(text, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: solid ? Colors.white : color)),
-      ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Image Area
+          Expanded(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(19)),
+                  child: imageUrl != null
+                      ? Image.network(imageUrl, fit: BoxFit.cover)
+                      : Container(
+                          color: AppColors.bgCard2,
+                          child: const Icon(Icons.image_outlined, color: AppColors.textMuted, size: 40),
+                        ),
+                ),
+                // Lock Icon
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(color: Colors.black38, shape: BoxShape.circle),
+                    child: const Icon(Icons.lock_outline, size: 14, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Info Area
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 4),
+                Text(dateStr, style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                const SizedBox(height: 2),
+                Text(venueName, style: TextStyle(fontSize: 12, color: AppColors.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 8),
+                const Text('Selling Fast', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.warning)),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EventDetailsScreen(event: event))),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.accent,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: const Text('View Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPastEventItem(Map<String, dynamic> event) {
+    final title = event['title'] ?? 'Untitled';
+    final startStr = event['start_time'];
+    final date = startStr != null ? DateTime.tryParse(startStr) : null;
+    final dateStr = date != null ? '${date.day}/${date.month}' : 'TBA';
+    final venueName = event['venue']?['name'] ?? 'TBA';
+    final image = event['image'];
+    final imageUrl = ApiConstants.buildImageUrl(image);
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.bgCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 50, height: 50,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              image: imageUrl != null ? DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover) : null,
+              color: AppColors.accent.withValues(alpha: 0.1),
+            ),
+            child: imageUrl == null ? const Icon(Icons.image, size: 20) : null,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
+                Text(dateStr, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                Text(venueName, style: TextStyle(fontSize: 11, color: AppColors.textMuted.withValues(alpha: 0.7))),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              const Text('Rate & Review', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+              const SizedBox(height: 4),
+              Row(
+                children: List.generate(5, (index) => const Icon(Icons.star_rounded, size: 14, color: AppColors.warning)),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

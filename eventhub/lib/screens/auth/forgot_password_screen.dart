@@ -7,15 +7,28 @@ import '../../widgets/gradient_button.dart';
 import 'verify_code_screen.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
-  const ForgotPasswordScreen({super.key});
+  final String? email;
+  const ForgotPasswordScreen({super.key, this.email});
 
   @override
   State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  final _emailCtrl = TextEditingController();
+  late final TextEditingController _emailCtrl;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailCtrl = TextEditingController(text: widget.email);
+  }
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    super.dispose();
+  }
 
   void _sendCode() async {
     final email = _emailCtrl.text.trim();
