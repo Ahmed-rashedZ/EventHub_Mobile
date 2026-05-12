@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 class AppColors {
   static const Color bgDark = Color(0xFF070B14);
@@ -36,9 +37,27 @@ class AppColors {
 }
 
 class ApiConstants {
-  // Since you are using USB, run: adb reverse tcp:8000 tcp:8000
-  static const String baseUrl = 'http://192.168.1.209:8000/api';
-  static const String imageUrl = 'http://192.168.1.209:8000/api/storage-proxy/';
+  // TIP: For testing on mobile data or other networks, use Ngrok:
+  // 1. Run 'ngrok http 8000'
+  // 2. Change '_pcIp' below to your ngrok URL (e.g., 'a1b2.ngrok.io') 
+  // 3. Remove 'http://' from the string if you do.
+  static const String _pcIp = '192.168.110.127';
+
+  static String get _host {
+    if (kIsWeb) return 'localhost';
+    // Check if running on Android
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      // Note: We can't easily detect if it's an emulator or real device at compile time
+      // but 10.0.2.2 is the standard for emulators. 
+      // If you are using a real device with 'adb reverse', use 'localhost'.
+      // For now, we'll keep the IP as the primary for real devices.
+      return _pcIp; 
+    }
+    return 'localhost';
+  }
+
+  static String get baseUrl => 'http://$_host:8000/api';
+  static String get imageUrl => 'http://$_host:8000/api/storage-proxy/';
 
   /// Safely builds a full image URL handling slashes and absolute URLs
   static String? buildImageUrl(dynamic path) {
