@@ -17,7 +17,6 @@ class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
   final List<Widget> _screens = [
     const HomeScreen(),
-    const SearchScreen(),
     const MyTicketsScreen(),
     const ProfileScreen(),
     const SettingsScreen(),
@@ -52,10 +51,9 @@ class _MainNavigationState extends State<MainNavigation> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _navItem(0, Icons.home_rounded),
-              _navItem(1, Icons.search_rounded),
-              _navItem(2, Icons.confirmation_number_rounded, hasBadge: true),
-              _navItem(3, Icons.person_rounded),
-              _navItem(4, Icons.settings_rounded),
+              _navItem(1, Icons.confirmation_number_rounded, hasBadge: true),
+              _navItem(2, Icons.person_rounded),
+              _navItem(3, Icons.settings_rounded),
             ],
           ),
         ),

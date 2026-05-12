@@ -47,8 +47,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final fullEvent = await provider.fetchEventDetail(widget.event['id']);
     if (fullEvent != null && mounted) {
       setState(() {
-        widget.event['tickets_count'] = fullEvent['tickets_count'];
-        widget.event['sponsors'] = fullEvent['sponsors'];
+        // Merge all fields from the full event object
+        widget.event.addAll(fullEvent);
       });
     }
   }
@@ -91,6 +91,45 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   void _book() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.help_outline, color: AppColors.accent),
+            SizedBox(width: 10),
+            Text('Confirm Booking', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to book a ticket for "${widget.event['title']}"?',
+          style: const TextStyle(color: AppColors.textMuted),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.success,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('Confirm', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
     setState(() => _isBooking = true);
     final provider = Provider.of<TicketProvider>(context, listen: false);
     final error = await provider.bookTicket(widget.event['id']);
@@ -317,8 +356,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 children: [
                   _buildInfoCard(Icons.calendar_today, 'Date & Time', '$formattedDate at $formattedTime'),
                   const SizedBox(height: 12),
-                  _buildInfoCard(Icons.location_on_outlined, 'Venue', venueName),
-                  if (venueLocation.isNotEmpty) ...[
+                  _buildInfoCard(
+                    Icons.location_on_outlined, 
+                    'Venue', 
+                    venueName,
+                  ),
+                  if (venueLocation.isNotEmpty && venueLocation.startsWith('http')) ...[
                     const SizedBox(height: 12),
                     GestureDetector(
                       onTap: () async {
@@ -330,7 +373,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       child: _buildInfoCard(
                         Icons.map_outlined,
                         'Location',
-                        'Open in Google Maps',
+                        'Open Link',
+                        trailing: const Icon(Icons.open_in_new, size: 16, color: AppColors.accent),
                       ),
                     ),
                   ],
@@ -531,7 +575,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     ]);
   }
 
-  Widget _buildInfoCard(IconData icon, String label, String value) {
+  Widget _buildInfoCard(IconData icon, String label, String value, {Widget? trailing}) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -557,6 +601,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
           ],
         )),
+        if (trailing != null) trailing,
       ]),
     );
   }

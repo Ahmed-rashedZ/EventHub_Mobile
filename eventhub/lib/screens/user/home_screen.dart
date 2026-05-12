@@ -8,6 +8,7 @@ import 'event_details_screen.dart';
 import 'my_tickets_screen.dart';
 import 'qr_code_screen.dart';
 import 'search_screen.dart';
+import '../profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -100,6 +101,84 @@ class _HomeScreenState extends State<HomeScreen> {
     }).toList();
   }
 
+  void _showFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => Container(
+          decoration: const BoxDecoration(
+            color: AppColors.bgCard,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Filters', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: AppColors.textMuted),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Text('Categories', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _categories.map((cat) {
+                  final isSelected = _selectedCategory == cat;
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() => _selectedCategory = cat);
+                      setSheetState(() {});
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppColors.accent : AppColors.bgCard2,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: isSelected ? AppColors.accent : AppColors.border),
+                      ),
+                      child: Text(
+                        cat,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : AppColors.textMuted,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Apply Filters', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
@@ -109,8 +188,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final name = auth.userName;
     final userImage = auth.user?['profile']?['logo'];
 
+    final filtered = _filteredEvents(eventProv.events);
+
     final now = DateTime.now();
-    final liveEvents = eventProv.events.where((e) {
+    final liveEvents = filtered.where((e) {
       final startStr = e['start_time'];
       final endStr = e['end_time'];
       if (startStr == null) return false;
@@ -119,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return startDt != null && startDt.isBefore(now) && (endDt != null && endDt.isAfter(now));
     }).toList();
 
-    final upcomingEvents = eventProv.events.where((e) {
+    final upcomingEvents = filtered.where((e) {
       final startStr = e['start_time'];
       if (startStr == null) return false;
       final startDt = DateTime.tryParse(startStr);
@@ -146,11 +227,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 24,
-                        backgroundColor: AppColors.accent.withValues(alpha: 0.2),
-                        backgroundImage: userImage != null ? NetworkImage(ApiConstants.buildImageUrl(userImage)!) : null,
-                        child: userImage == null ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.accent)) : null,
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+                        },
+                        child: CircleAvatar(
+                          radius: 24,
+                          backgroundColor: AppColors.accent.withValues(alpha: 0.2),
+                          backgroundImage: userImage != null ? NetworkImage(ApiConstants.buildImageUrl(userImage)!) : null,
+                          child: userImage == null ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.accent)) : null,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -163,19 +249,20 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       // App Logo / Notifications
-                      GestureDetector(
-                        onTap: () {
-                          // Could open notifications or search
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen()));
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.bgCard,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.border),
+                      ShaderMask(
+                        shaderCallback: (bounds) => const LinearGradient(
+                          colors: [AppColors.accent2, AppColors.accent],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ).createShader(bounds),
+                        child: const Text(
+                          'EventHub',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            letterSpacing: -1.0,
                           ),
-                          child: const Icon(Icons.search_rounded, color: AppColors.accent2, size: 28), 
                         ),
                       ),
                     ],
@@ -211,7 +298,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(width: 12),
                       GestureDetector(
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen())),
+                        onTap: _showFilterSheet,
                         child: Container(
                           height: 50,
                           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -360,100 +447,104 @@ class _HomeScreenState extends State<HomeScreen> {
     final status = ticket['status'] ?? 'pending';
     final isConfirmed = status == 'confirmed' || status == 'valid';
 
-    return Container(
-      width: 300,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isConfirmed 
-            ? [const Color(0xFF00B4DB), const Color(0xFF0083B0)] 
-            : [const Color(0xFF434343), const Color(0xFF000000)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return InkWell(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EventDetailsScreen(event: event))),
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        width: 300,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isConfirmed 
+              ? [const Color(0xFF00B4DB), const Color(0xFF0083B0)] 
+              : [const Color(0xFF434343), const Color(0xFF000000)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(18),
         ),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(6),
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            status.toUpperCase(),
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
                         ),
-                        child: Text(
-                          status.toUpperCase(),
-                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                        const SizedBox(height: 12),
+                        Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white), maxLines: 2, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 4),
+                        Text('Date: $dateStr', style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
+                        const Spacer(),
+                        ElevatedButton(
+                          onPressed: () {
+                            final qrCode = ticket['qr_code']?.toString() ?? '';
+                            final ticketId = ticket['id']?.toString() ?? '';
+                            final isUsed = ticket['status'] == 'used';
+                            Navigator.push(context, MaterialPageRoute(
+                              builder: (_) => QRCodeScreen(
+                                qrCode: qrCode,
+                                eventTitle: title,
+                                ticketId: ticketId,
+                                isUsed: isUsed,
+                              ),
+                            ));
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white.withValues(alpha: 0.2),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            minimumSize: const Size(0, 32),
+                          ),
+                          child: const Text('View Tickets', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white), maxLines: 2, overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 4),
-                      Text('Date: $dateStr', style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
-                      const Spacer(),
-                      ElevatedButton(
-                        onPressed: () {
-                          final qrCode = ticket['qr_code']?.toString() ?? '';
-                          final ticketId = ticket['id']?.toString() ?? '';
-                          final isUsed = ticket['status'] == 'used';
-                          Navigator.push(context, MaterialPageRoute(
-                            builder: (_) => QRCodeScreen(
-                              qrCode: qrCode,
-                              eventTitle: title,
-                              ticketId: ticketId,
-                              isUsed: isUsed,
-                            ),
-                          ));
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white.withValues(alpha: 0.2),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          minimumSize: const Size(0, 32),
-                        ),
-                        child: const Text('View Tickets', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                // QR Code Placeholder
-                Container(
-                  width: 80,
-                  height: 80,
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
+                  const SizedBox(width: 12),
+                  // QR Code Placeholder
+                  Container(
+                    width: 80,
+                    height: 80,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.qr_code_2_rounded, size: 64, color: Colors.black),
                   ),
-                  child: const Icon(Icons.qr_code_2_rounded, size: 64, color: Colors.black),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          // Perforation effect
-          Positioned(
-            left: 190,
-            top: -10,
-            bottom: -10,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(8, (index) => Container(
-                width: 4, height: 4,
-                decoration: const BoxDecoration(color: AppColors.bgDark, shape: BoxShape.circle),
-              )),
+            // Perforation effect
+            Positioned(
+              left: 190,
+              top: -10,
+              bottom: -10,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: List.generate(8, (index) => Container(
+                  width: 4, height: 4,
+                  decoration: const BoxDecoration(color: AppColors.bgDark, shape: BoxShape.circle),
+                )),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
