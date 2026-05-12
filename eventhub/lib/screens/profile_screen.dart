@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 import '../providers/auth_provider.dart';
 import '../providers/ticket_provider.dart';
 import '../services/api_service.dart';
@@ -18,6 +20,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   List<dynamic> _notifications = [];
   bool _loadingNotifications = false;
   int _unreadCount = 0;
+  bool _isUploadingImage = false;
 
   @override
   void initState() {
@@ -63,6 +66,59 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await api.put('/notifications/read-all');
       _fetchNotifications();
     } catch (_) {}
+  }
+
+  Future<void> _pickAndUploadImage(AuthProvider auth) async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+
+    if (image == null) return;
+
+    setState(() => _isUploadingImage = true);
+
+    try {
+      final api = ApiService();
+      
+      final byteData = await image.readAsBytes();
+      final multipartFile = http.MultipartFile.fromBytes(
+        'logo', 
+        byteData,
+        filename: 'profile_picture.jpg',
+      );
+
+      final res = await api.multipart(
+        'POST', 
+        '/profile?_method=PUT', 
+        {
+          'name': auth.userName ?? '',
+          'email': auth.userEmail ?? '',
+        },
+        file: multipartFile
+      );
+
+      if (res.statusCode == 200) {
+        await auth.checkAuth();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profile picture updated!'), backgroundColor: AppColors.success),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to upload image'), backgroundColor: AppColors.danger),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.danger),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingImage = false);
+    }
   }
 
   @override
@@ -139,51 +195,91 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 10),
               // Profile header
-              Stack(
-                alignment: Alignment.center,
-                clipBehavior: Clip.none,
-                children: [
-                  // Blurred background header
-                  Container(
-                    height: 140,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      gradient: LinearGradient(
-                        colors: [AppColors.accent.withValues(alpha: 0.3), AppColors.accent2.withValues(alpha: 0.1)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: 100,
-                    child: Container(
-                      width: 80,
-                      height: 80,
+              SizedBox(
+                height: 200,
+                child: Stack(
+                  alignment: Alignment.topCenter,
+                  clipBehavior: Clip.none,
+                  children: [
+                    // Blurred background header
+                    Container(
+                      height: 140,
+                      width: double.infinity,
                       decoration: BoxDecoration(
-                        gradient: AppColors.accentGradient,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.bgDark, width: 4),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.accent.withValues(alpha: 0.4),
-                            blurRadius: 16,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          name.isNotEmpty ? name[0].toUpperCase() : 'U',
-                          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: Colors.white),
+                        borderRadius: BorderRadius.circular(20),
+                        gradient: LinearGradient(
+                          colors: [AppColors.accent.withValues(alpha: 0.3), AppColors.accent2.withValues(alpha: 0.1)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    Positioned(
+                      top: 90,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              gradient: AppColors.accentGradient,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppColors.bgDark, width: 4),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.accent.withValues(alpha: 0.4),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                              image: user?['profile']?['logo'] != null
+                                  ? DecorationImage(
+                                      image: NetworkImage(ApiConstants.buildImageUrl(user!['profile']['logo'])!),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : null,
+                            ),
+                            child: user?['profile']?['logo'] == null
+                                ? Center(
+                                    child: Text(
+                                      name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                                      style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w800, color: Colors.white),
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          if (_isUploadingImage)
+                            Positioned.fill(
+                              child: Container(
+                                decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5), shape: BoxShape.circle),
+                                child: const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)),
+                              ),
+                            ),
+                          // Edit Icon Button
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: GestureDetector(
+                              onTap: () => _pickAndUploadImage(auth),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.accent,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: AppColors.bgDark, width: 3),
+                                ),
+                                child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 50), // space for overlapping avatar
+              const SizedBox(height: 10), // reduced space since header is taller now
 
               Text(name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
               const SizedBox(height: 4),

@@ -42,4 +42,25 @@ class ApiService {
     final headers = await _getHeaders();
     return await http.delete(url, headers: headers);
   }
+
+  /// NEW: Multipart request for file uploads
+  Future<http.Response> multipart(String method, String endpoint, Map<String, String> fields, {http.MultipartFile? file}) async {
+    final url = Uri.parse('${ApiConstants.baseUrl}$endpoint');
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    
+    var request = http.MultipartRequest(method, url);
+    request.headers.addAll({
+      'Accept': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    });
+    
+    request.fields.addAll(fields);
+    if (file != null) {
+      request.files.add(file);
+    }
+    
+    final streamedRes = await request.send();
+    return await http.Response.fromStream(streamedRes);
+  }
 }
