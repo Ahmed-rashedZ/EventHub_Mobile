@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'my_tickets_screen.dart';
-import 'search_screen.dart';
 import 'settings_screen.dart';
+import 'search_screen.dart';
 import '../profile_screen.dart';
 import '../../utils/constants.dart';
 
@@ -10,11 +10,18 @@ class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
 
   @override
-  State<MainNavigation> createState() => _MainNavigationState();
+  State<MainNavigation> createState() => MainNavigationState();
 }
 
-class _MainNavigationState extends State<MainNavigation> {
+class MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
+
+  void setIndex(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
   final List<Widget> _screens = [
     const HomeScreen(),
     const MyTicketsScreen(),
@@ -36,7 +43,9 @@ class _MainNavigationState extends State<MainNavigation> {
         decoration: BoxDecoration(
           color: AppColors.bgCard.withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: AppColors.borderLight.withValues(alpha: 0.1)),
+          border: Border.all(
+            color: AppColors.borderLight.withValues(alpha: 0.1),
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.4),
@@ -53,7 +62,6 @@ class _MainNavigationState extends State<MainNavigation> {
               _navItem(0, Icons.home_rounded),
               _navItem(1, Icons.confirmation_number_rounded, hasBadge: true),
               _navItem(2, Icons.person_rounded),
-              _navItem(3, Icons.settings_rounded),
             ],
           ),
         ),
@@ -62,9 +70,8 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 
   Widget _navItem(int index, IconData icon, {bool hasBadge = false}) {
-    final isActive = _currentIndex == (index > 2 ? index - 2 : index); // Mapping to 3 screens
-    // Actually let's just make it simpler for the demo look
-    final isSelected = _currentIndex == index;
+    // Highlight Profile (index 2) if we are in Settings (index 3)
+    final isSelected = _currentIndex == index || (_currentIndex == 3 && index == 2);
 
     return GestureDetector(
       onTap: () {
@@ -78,13 +85,15 @@ class _MainNavigationState extends State<MainNavigation> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: isSelected ? AppColors.accentGradient : null,
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: AppColors.accent2.withValues(alpha: 0.4),
-              blurRadius: 12,
-              spreadRadius: 1,
-            )
-          ] : [],
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.accent2.withValues(alpha: 0.4),
+                    blurRadius: 12,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : [],
         ),
         child: Stack(
           alignment: Alignment.center,

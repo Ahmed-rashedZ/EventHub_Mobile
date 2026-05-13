@@ -21,6 +21,7 @@ class EventProvider extends ChangeNotifier {
 
     try {
       final res = await _api.get('/events');
+      
       if (res.statusCode == 200) {
         final decoded = jsonDecode(res.body);
         if (decoded is List) {

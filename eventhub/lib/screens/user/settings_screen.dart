@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/api_service.dart';
 import '../../utils/constants.dart';
 import '../auth/login_screen.dart';
 import '../auth/forgot_password_screen.dart';
@@ -34,7 +36,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSection('Account', [
-              _buildSettingItem(Icons.person_outline_rounded, 'Profile Settings', onTap: () => _showEditProfileDialog(context, auth)),
+              _buildSettingItem(Icons.alternate_email_rounded, 'Change Email', onTap: () => _showChangeEmailDialog(context, auth)),
               _buildSettingItem(Icons.lock_outline_rounded, 'Change Password', onTap: () => _showChangePasswordDialog(context)),
             ]),
             _buildSection('Notifications', [
@@ -164,28 +166,123 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showEditProfileDialog(BuildContext context, AuthProvider auth) {
-    final nameCtrl = TextEditingController(text: auth.userName);
-    final emailCtrl = TextEditingController(text: auth.userEmail);
+  void _showChangeEmailDialog(BuildContext context, AuthProvider auth) {
+    final currentEmailCtrl = TextEditingController(text: auth.userEmail);
+    final newEmailCtrl = TextEditingController();
+    final passwordCtrl = TextEditingController();
+    bool isLoading = false;
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgCard,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Edit Profile'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name')),
-            TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email')),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: AppColors.bgCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Change Email',
+              style: TextStyle(fontWeight: FontWeight.w700)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Enter your new email and verify your identity',
+                    style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                const SizedBox(height: 16),
+                _dialogLabel('Current Email'),
+                const SizedBox(height: 6),
+                _dialogInput(currentEmailCtrl, 'Current email', false),
+                const SizedBox(height: 16),
+                _dialogLabel('New Email'),
+                const SizedBox(height: 6),
+                _dialogInput(newEmailCtrl, 'New email', false),
+                const SizedBox(height: 16),
+                _dialogLabel('Current Password'),
+                const SizedBox(height: 6),
+                _dialogInput(passwordCtrl, 'Your password', true),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel',
+                  style: TextStyle(color: AppColors.textMuted)),
+            ),
+            TextButton(
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      if (newEmailCtrl.text.trim().isEmpty) return;
+                      setDialogState(() => isLoading = true);
+                      try {
+                        // Assuming backend handles email change with password verification
+                        // For now we use the existing profile update endpoint
+                        final api = ApiService();
+                        final res = await api.put('/profile', {
+                          'email': newEmailCtrl.text.trim(),
+                          'current_email': currentEmailCtrl.text.trim(),
+                          'password': passwordCtrl.text.trim(),
+                        });
+
+                        if (res.statusCode == 200) {
+                          await auth.checkAuth();
+                          if (ctx.mounted) Navigator.pop(ctx);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Email updated successfully!'),
+                                backgroundColor: AppColors.success,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        } else {
+                          final data = jsonDecode(res.body);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    data['message'] ?? 'Failed to update email'),
+                                backgroundColor: AppColors.danger,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text('Error: $e'),
+                                backgroundColor: AppColors.danger),
+                          );
+                        }
+                      }
+                      setDialogState(() => isLoading = false);
+                    },
+              child: isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('Change',
+                      style: TextStyle(
+                          color: AppColors.accent,
+                          fontWeight: FontWeight.bold)),
+            ),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Save')),
-        ],
       ),
     );
+  }
+
+  Widget _dialogLabel(String text) {
+    return Text(text.toUpperCase(),
+        style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textMuted,
+            letterSpacing: 0.5));
   }
 
   void _showChangePasswordDialog(BuildContext context) {

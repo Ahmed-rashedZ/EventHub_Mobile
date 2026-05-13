@@ -9,6 +9,7 @@ import 'my_tickets_screen.dart';
 import 'qr_code_screen.dart';
 import 'search_screen.dart';
 import '../profile_screen.dart';
+import 'main_navigation.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -102,6 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showFilterSheet() {
+    String tempCategory = _selectedCategory;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -133,11 +135,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 spacing: 8,
                 runSpacing: 8,
                 children: _categories.map((cat) {
-                  final isSelected = _selectedCategory == cat;
+                  final isSelected = tempCategory == cat;
                   return GestureDetector(
                     onTap: () {
-                      setState(() => _selectedCategory = cat);
-                      setSheetState(() {});
+                      setSheetState(() => tempCategory = cat);
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -161,7 +162,10 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    setState(() => _selectedCategory = tempCategory);
+                    Navigator.pop(context);
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.accent,
                     foregroundColor: Colors.white,
@@ -229,7 +233,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       GestureDetector(
                         onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+                          final navState = context.findAncestorStateOfType<MainNavigationState>();
+                          if (navState != null) {
+                            navState.setIndex(2); // Profile tab is at index 2
+                          } else {
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+                          }
                         },
                         child: CircleAvatar(
                           radius: 24,
@@ -364,9 +373,30 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 16),
                 eventProv.isLoadingEvents
                     ? const Center(child: CircularProgressIndicator())
-                    : upcomingEvents.isEmpty
-                        ? _emptyStateHorizontal('No upcoming events')
-                        : GridView.builder(
+                    : eventProv.errorMessage != null
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                children: [
+                                  const Icon(Icons.error_outline, color: AppColors.danger, size: 40),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    eventProv.errorMessage!,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(color: AppColors.danger),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => eventProv.fetchEvents(),
+                                    child: const Text('Retry'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        : upcomingEvents.isEmpty
+                            ? _emptyStateHorizontal('No upcoming events')
+                            : GridView.builder(
                             padding: const EdgeInsets.symmetric(horizontal: 20),
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
@@ -580,16 +610,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: const Icon(Icons.image_outlined, color: AppColors.textMuted, size: 40),
                         ),
                 ),
-                // Lock Icon
-                Positioned(
-                  top: 10,
-                  right: 10,
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(color: Colors.black38, shape: BoxShape.circle),
-                    child: const Icon(Icons.lock_outline, size: 14, color: Colors.white),
+                // Lock Icon (Only if tickets are closed)
+                if (event['is_tickets_open'] == false || event['is_tickets_open'] == 0)
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
+                      child: const Icon(Icons.lock_rounded, size: 14, color: Colors.white),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -605,7 +636,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 2),
                 Text(venueName, style: TextStyle(fontSize: 12, color: AppColors.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 8),
-                const Text('Selling Fast', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.warning)),
+                if (event['is_tickets_open'] == false || event['is_tickets_open'] == 0)
+                  const Text('Booking Closed', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.danger))
+                else
+                  const Text('Selling Fast', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.warning)),
                 const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
