@@ -136,20 +136,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       opacity: _fadeAnim,
                       child: Column(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: AppColors.accentGradient,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.accent.withValues(alpha: 0.4),
-                                  blurRadius: 30,
-                                  spreadRadius: 2,
-                                ),
-                              ],
+                          SizedBox(
+                            width: 100,
+                            height: 100,
+                            child: Image.asset(
+                              'assets/images/logo.png',
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) => const Icon(Icons.bolt_rounded, size: 48, color: Colors.white),
                             ),
-                            child: const Icon(Icons.bolt_rounded, size: 48, color: Colors.white),
                           ),
                           const SizedBox(height: 24),
                           const Text(
