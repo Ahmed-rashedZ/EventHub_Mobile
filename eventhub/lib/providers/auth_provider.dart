@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
+import '../services/fcm_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final ApiService _api = ApiService();
@@ -54,6 +55,8 @@ class AuthProvider extends ChangeNotifier {
         _user = data['user'];
         _isAuthenticated = true;
         notifyListeners();
+        // Save FCM token to backend after login
+        FCMService.refreshAndSaveToken();
         return null; // Success
       } else {
         final message = data['message'] ?? 'Login failed';
@@ -88,6 +91,8 @@ class AuthProvider extends ChangeNotifier {
         _user = data['user'];
         _isAuthenticated = true;
         notifyListeners();
+        // Save FCM token to backend after register
+        FCMService.refreshAndSaveToken();
         return null; // Success
       } else {
         final message = data['message'] ?? 'Registration failed';

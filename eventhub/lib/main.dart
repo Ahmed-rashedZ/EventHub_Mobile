@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'utils/constants.dart';
 import 'providers/auth_provider.dart';
@@ -9,9 +10,11 @@ import 'providers/event_provider.dart';
 import 'providers/ticket_provider.dart';
 import 'providers/notification_provider.dart';
 import 'screens/splash_screen.dart';
+import 'services/fcm_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -20,6 +23,15 @@ void main() {
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
+
+  // Initialize Firebase (Non-blocking)
+  try {
+    await Firebase.initializeApp();
+    // Start notification service in background so it doesn't block UI
+    FCMService.initialize(); 
+  } catch (e) {
+    debugPrint('Firebase initialization failed: $e');
+  }
 
   runApp(
     MultiProvider(

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../utils/constants.dart';
-
 import 'package:provider/provider.dart';
+import '../../utils/constants.dart';
 import '../../providers/notification_provider.dart';
 import '../../providers/event_provider.dart';
 import 'main_navigation.dart';
@@ -18,10 +17,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   void initState() {
     super.initState();
-    // Optionally mark all as read automatically when opened
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   Provider.of<NotificationProvider>(context, listen: false).markAllAsRead();
-    // });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<NotificationProvider>().fetchNotifications();
+    });
   }
 
   @override
@@ -46,19 +44,28 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       color: Colors.white,
                     ),
                   ),
-                  if (context.watch<NotificationProvider>().hasUnreadNotifications)
-                    TextButton(
-                      onPressed: () {
-                        context.read<NotificationProvider>().markAllAsRead();
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.accent,
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  Row(
+                    children: [
+                      if (context.watch<NotificationProvider>().hasUnreadNotifications)
+                        TextButton(
+                          onPressed: () {
+                            context.read<NotificationProvider>().markAllAsRead();
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.accent,
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text('Mark all as read'),
+                        ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => context.read<NotificationProvider>().fetchNotifications(),
+                        child: const Icon(Icons.refresh_rounded, color: AppColors.textMuted, size: 22),
                       ),
-                      child: const Text('Mark all as read'),
-                    ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -67,8 +74,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             Expanded(
               child: Consumer<NotificationProvider>(
                 builder: (context, notificationProvider, child) {
+                  if (notificationProvider.isLoading) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2.5),
+                    );
+                  }
+
                   final notifications = notificationProvider.notifications;
-                  
+
                   if (notifications.isEmpty) {
                     return Center(
                       child: Column(
@@ -85,19 +98,29 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               fontWeight: FontWeight.w500,
                             ),
                           ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'You\'ll get alerts for events, tickets & more',
+                            style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+                          ),
                         ],
                       ),
                     );
                   }
 
-                  return ListView.builder(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.only(top: 8, bottom: 100), // Space for bottom bar
-                    itemCount: notifications.length,
-                    itemBuilder: (context, index) {
-                      final notification = notifications[index];
-                      return _buildNotificationCard(notification, index, notificationProvider);
-                    },
+                  return RefreshIndicator(
+                    onRefresh: () => notificationProvider.fetchNotifications(),
+                    color: AppColors.accent,
+                    child: ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.only(top: 8, bottom: 100),
+                      itemCount: notifications.length,
+                      itemBuilder: (context, index) {
+                        final notification = notifications[index];
+                        return _buildNotificationCard(
+                            notification, index, notificationProvider);
+                      },
+                    ),
                   );
                 },
               ),
@@ -108,16 +131,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildNotificationCard(Map<String, dynamic> notification, int index, NotificationProvider provider) {
-    final bool isRead = notification['isRead'];
+  Widget _buildNotificationCard(Map<String, dynamic> notification, int index,
+      NotificationProvider provider) {
+    final bool isRead = notification['isRead'] == true;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       decoration: BoxDecoration(
         color: isRead ? AppColors.bgCard : AppColors.bgCard2,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isRead ? AppColors.borderLight : AppColors.accent.withValues(alpha: 0.5),
+          color: isRead
+              ? AppColors.borderLight.withValues(alpha: 0.2)
+              : AppColors.accent.withValues(alpha: 0.4),
         ),
       ),
       child: Material(
@@ -125,24 +151,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
-            if (!isRead) {
-              provider.markAsRead(index);
-            }
-
-            final actionType = notification['actionType'];
-            if (actionType == 'tickets') {
-              final navState = context.findAncestorStateOfType<MainNavigationState>();
-              navState?.setIndex(1); // 1 is tickets tab
-            } else if (actionType == 'explore') {
-              final navState = context.findAncestorStateOfType<MainNavigationState>();
-              navState?.setIndex(0); // 0 is explore tab
-            } else if (actionType == 'event_details') {
-              // Get dummy event just to show the details screen works
-              final events = context.read<EventProvider>().events;
-              if (events.isNotEmpty) {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => EventDetailsScreen(event: events.first)));
-              }
-            }
+            // Mark as read
+            provider.markAsRead(index);
+            // Navigate based on type
+            _handleNotificationTap(notification);
           },
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -153,16 +165,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: notification['color'].withValues(alpha: 0.1),
+                    color: (notification['color'] as Color).withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    notification['icon'],
-                    color: notification['color'],
-                    size: 24,
+                    notification['icon'] as IconData,
+                    color: notification['color'] as Color,
+                    size: 22,
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
 
                 // Content
                 Expanded(
@@ -176,8 +188,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             child: Text(
                               notification['title'],
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: isRead ? FontWeight.w600 : FontWeight.bold,
+                                fontSize: 15,
+                                fontWeight:
+                                    isRead ? FontWeight.w600 : FontWeight.bold,
                                 color: Colors.white,
                               ),
                             ),
@@ -193,20 +206,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             ),
                         ],
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 5),
                       Text(
                         notification['message'],
                         style: TextStyle(
-                          fontSize: 14,
-                          color: isRead ? AppColors.textMuted : Colors.white70,
+                          fontSize: 13,
+                          color: isRead
+                              ? AppColors.textMuted
+                              : Colors.white.withValues(alpha: 0.8),
+                          height: 1.4,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Text(
                         notification['time'],
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textMuted,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textMuted.withValues(alpha: 0.7),
                         ),
                       ),
                     ],
@@ -218,5 +234,32 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ),
       ),
     );
+  }
+
+  void _handleNotificationTap(Map<String, dynamic> notification) {
+    final actionType = notification['actionType'];
+    final relatedId = notification['relatedId'];
+
+    if (actionType == 'tickets') {
+      final navState = context.findAncestorStateOfType<MainNavigationState>();
+      navState?.setIndex(1);
+    } else if (actionType == 'explore') {
+      final navState = context.findAncestorStateOfType<MainNavigationState>();
+      navState?.setIndex(0);
+    } else if (actionType == 'event_details' && relatedId != null) {
+      // Try to find the event in EventProvider
+      final events = context.read<EventProvider>().events;
+      final event = events.firstWhere(
+        (e) => e['id'] == relatedId,
+        orElse: () => {},
+      );
+      if (event.isNotEmpty) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => EventDetailsScreen(event: event)),
+        );
+      }
+    }
   }
 }

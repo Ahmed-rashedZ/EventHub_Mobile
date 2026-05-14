@@ -36,10 +36,10 @@ class AppColors {
 }
 
 class ApiConstants {
-  // Since you are using USB, run: adb reverse tcp:8000 tcp:8000
-  static const String baseUrl = 'http://192.168.110.127:8000/api';
+  // Since you are using a physical device, we use your computer's local IP
+  static const String baseUrl = 'http://192.168.1.209:8000/api';
   static const String imageUrl =
-      'http://192.168.110.127:8000/api/storage-proxy/';
+      'http://192.168.1.209:8000/api/storage-proxy/';
 
   /// Safely builds a full image URL handling slashes and absolute URLs
   static String? buildImageUrl(dynamic path) {
