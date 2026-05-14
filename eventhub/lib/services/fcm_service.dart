@@ -9,7 +9,9 @@ import 'api_service.dart';
 /// Top-level background message handler (must be a top-level function)
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  if (!kIsWeb) {
+    await Firebase.initializeApp();
+  }
   // Background messages are shown by FCM automatically on Android
   // No need to do anything here for basic push display
 }

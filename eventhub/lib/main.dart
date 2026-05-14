@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -26,9 +27,13 @@ void main() async {
 
   // Initialize Firebase (Non-blocking)
   try {
-    await Firebase.initializeApp();
-    // Start notification service in background so it doesn't block UI
-    FCMService.initialize(); 
+    if (!kIsWeb) {
+      await Firebase.initializeApp();
+      // Start notification service in background so it doesn't block UI
+      FCMService.initialize(); 
+    } else {
+      debugPrint('Firebase initialization skipped on Web (requires web config).');
+    }
   } catch (e) {
     debugPrint('Firebase initialization failed: $e');
   }
