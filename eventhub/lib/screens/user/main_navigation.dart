@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'my_tickets_screen.dart';
 import 'settings_screen.dart';
-import 'search_screen.dart';
+import 'package:provider/provider.dart';
 import '../profile_screen.dart';
+import 'notifications_screen.dart';
 import '../../utils/constants.dart';
+import '../../providers/ticket_provider.dart';
+import '../../providers/notification_provider.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -27,10 +30,14 @@ class MainNavigationState extends State<MainNavigation> {
     const MyTicketsScreen(),
     const ProfileScreen(),
     const SettingsScreen(),
+    const NotificationsScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final hasUnreadTickets = context.watch<TicketProvider>().hasUnreadTickets;
+    final hasUnreadNotifications = context.watch<NotificationProvider>().hasUnreadNotifications;
+
     return Scaffold(
       extendBody: true, // Crucial for floating bottom bar
       body: AnimatedSwitcher(
@@ -60,7 +67,8 @@ class MainNavigationState extends State<MainNavigation> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _navItem(0, Icons.home_rounded),
-              _navItem(1, Icons.confirmation_number_rounded, hasBadge: true),
+              _navItem(1, Icons.confirmation_number_rounded, hasBadge: hasUnreadTickets),
+              _navItem(4, Icons.notifications_rounded, hasBadge: hasUnreadNotifications),
               _navItem(2, Icons.person_rounded),
             ],
           ),

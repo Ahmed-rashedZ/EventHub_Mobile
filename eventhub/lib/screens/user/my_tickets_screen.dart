@@ -32,6 +32,7 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
     _tabCtrl = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<TicketProvider>(context, listen: false).fetchMyTickets();
+      Provider.of<TicketProvider>(context, listen: false).markTicketsAsRead();
     });
   }
 

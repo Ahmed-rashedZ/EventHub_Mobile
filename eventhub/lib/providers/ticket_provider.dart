@@ -8,9 +8,11 @@ class TicketProvider extends ChangeNotifier {
 
   List<dynamic> _myTickets = [];
   bool _isLoadingTickets = false;
+  bool _hasUnreadTickets = true; // Default to true until viewed
 
   List<dynamic> get myTickets => _myTickets;
   bool get isLoadingTickets => _isLoadingTickets;
+  bool get hasUnreadTickets => _hasUnreadTickets;
 
   /// Upcoming tickets (events not yet passed & ticket unused)
   List<dynamic> get upcomingTickets {
@@ -43,6 +45,13 @@ class TicketProvider extends ChangeNotifier {
     return _myTickets.where((t) => t['status'] == 'used').length;
   }
 
+  void markTicketsAsRead() {
+    if (_hasUnreadTickets) {
+      _hasUnreadTickets = false;
+      notifyListeners();
+    }
+  }
+
   /// GET /api/my-tickets
   Future<void> fetchMyTickets() async {
     _isLoadingTickets = true;
@@ -51,7 +60,11 @@ class TicketProvider extends ChangeNotifier {
     try {
       final res = await _api.get('/my-tickets');
       if (res.statusCode == 200) {
-        _myTickets = jsonDecode(res.body);
+        final newTickets = jsonDecode(res.body) as List<dynamic>;
+        if (_myTickets.length != newTickets.length) {
+          _hasUnreadTickets = true;
+        }
+        _myTickets = newTickets;
         // Cache tickets locally for offline viewing
         _cacheTickets();
       }

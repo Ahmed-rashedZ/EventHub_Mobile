@@ -7,6 +7,7 @@ import 'utils/constants.dart';
 import 'providers/auth_provider.dart';
 import 'providers/event_provider.dart';
 import 'providers/ticket_provider.dart';
+import 'providers/notification_provider.dart';
 import 'screens/splash_screen.dart';
 
 void main() {
@@ -26,6 +27,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => EventProvider()),
         ChangeNotifierProvider(create: (_) => TicketProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
       ],
       child: const EventHubApp(),
     ),

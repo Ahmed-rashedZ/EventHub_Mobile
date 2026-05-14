@@ -332,33 +332,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 32),
 
-              // ── Ticket History ──
-              _buildSectionTitle(
-                'Ticket History',
-                'View All',
-                onTapAction: () {
-                  final navState = context
-                      .findAncestorStateOfType<MainNavigationState>();
-                  if (navState != null) {
-                    navState.setIndex(1); // Tickets tab is at index 1
-                  } else {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => MyTicketsScreen()),
-                    );
-                  }
-                },
-              ),
-              const SizedBox(height: 12),
-              ListView.separated(
+              // ── Statistics ──
+              _buildSectionTitle('Statistics', null),
+              const SizedBox(height: 16),
+              Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: ticketProv.myTickets.length > 3
-                    ? 3
-                    : ticketProv.myTickets.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (_, i) =>
-                    _buildTicketHistoryItem(ticketProv.myTickets[i]),
+                child: Row(
+                  children: [
+                    _buildStatCard(
+                      icon: Icons.local_activity_rounded,
+                      label: 'Tickets Booked',
+                      value: ticketProv.myTickets.length.toString(),
+                      color: AppColors.accent,
+                    ),
+                    const SizedBox(width: 16),
+                    _buildStatCard(
+                      icon: Icons.event_available_rounded,
+                      label: 'Events Attended',
+                      value: ticketProv.totalAttended.toString(),
+                      color: AppColors.success,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 32),
 
