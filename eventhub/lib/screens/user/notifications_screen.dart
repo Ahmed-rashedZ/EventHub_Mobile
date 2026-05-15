@@ -5,6 +5,7 @@ import '../../providers/notification_provider.dart';
 import '../../providers/event_provider.dart';
 import 'main_navigation.dart';
 import 'event_details_screen.dart';
+import '../../providers/language_provider.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -24,6 +25,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final language = Provider.of<LanguageProvider>(context);
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       body: SafeArea(
@@ -36,9 +38,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Notifications',
-                    style: TextStyle(
+                  Text(
+                    language.translate('notifications'),
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -57,7 +59,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             minimumSize: Size.zero,
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
-                          child: const Text('Mark all as read'),
+                          child: Text(language.translate('mark_all_read')),
                         ),
                       const SizedBox(width: 8),
                       GestureDetector(
@@ -90,18 +92,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           Icon(Icons.notifications_off_rounded,
                               size: 64, color: AppColors.textMuted.withValues(alpha: 0.5)),
                           const SizedBox(height: 16),
-                          const Text(
-                            'No notifications yet',
-                            style: TextStyle(
+                          Text(
+                            language.translate('no_notifications'),
+                            style: const TextStyle(
                               fontSize: 16,
                               color: AppColors.textMuted,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           const SizedBox(height: 8),
-                          const Text(
-                            'You\'ll get alerts for events, tickets & more',
-                            style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+                          Text(
+                            language.translate('notification_hint'),
+                            style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
                           ),
                         ],
                       ),

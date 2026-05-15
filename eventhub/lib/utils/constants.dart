@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 class AppColors {
   static const Color bgDark = Color(0xFF070B14);
@@ -35,11 +37,20 @@ class AppColors {
   );
 }
 
+
 class ApiConstants {
-  // Since you are using a physical device, we use your computer's local IP
-  static const String baseUrl = 'http://192.168.1.209:8000/api';
-  static const String imageUrl =
-      'http://192.168.1.209:8000/api/storage-proxy/';
+  /// Automatically determines the host based on the platform.
+  /// - Android Emulator: 10.0.2.2 (redirects to host machine)
+  /// - iOS Simulator / Web: localhost
+  /// - Real Device: Use 'adb reverse tcp:8000 tcp:8000' to use localhost
+  static String get host {
+    if (kIsWeb) return 'localhost';
+    if (Platform.isAndroid) return '127.0.0.1'; // Use '10.0.2.2' for emulator without adb reverse
+    return '127.0.0.1';
+  }
+
+  static String get baseUrl => 'http://$host:8000/api';
+  static String get imageUrl => 'http://$host:8000/api/storage-proxy/';
 
   /// Safely builds a full image URL handling slashes and absolute URLs
   static String? buildImageUrl(dynamic path) {

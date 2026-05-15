@@ -13,6 +13,7 @@ import '../../widgets/gradient_button.dart';
 import '../../widgets/rate_event_bottom_sheet.dart';
 import 'public_profile_screen.dart';
 import 'reviews_list_screen.dart';
+import '../../providers/language_provider.dart';
 
 class EventDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> event;
@@ -91,26 +92,27 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   void _book() async {
+    final language = Provider.of<LanguageProvider>(context, listen: false);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.help_outline, color: AppColors.accent),
-            SizedBox(width: 10),
-            Text('Confirm Booking', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            const Icon(Icons.help_outline, color: AppColors.accent),
+            const SizedBox(width: 10),
+            Text(language.translate('confirm_booking'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ],
         ),
         content: Text(
-          'Are you sure you want to book a ticket for "${widget.event['title']}"?',
+          '${language.translate('booking_confirm_msg')} "${widget.event['title']}"?',
           style: const TextStyle(color: AppColors.textMuted),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
+            child: Text(language.translate('cancel'), style: const TextStyle(color: AppColors.textMuted)),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -121,7 +123,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
-              child: const Text('Confirm', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(language.translate('confirm'), style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -141,10 +143,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       _refreshEventData(); // Refresh to update booked count
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(children: [
-            Icon(Icons.check_circle, color: Colors.white, size: 20),
-            SizedBox(width: 8),
-            Text('Ticket Booked Successfully!'),
+          content: Row(children: [
+            const Icon(Icons.check_circle, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Text(language.translate('ticket_booked_success')),
           ]),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
@@ -210,6 +212,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final language = Provider.of<LanguageProvider>(context);
     final e = widget.event;
     final dateStr = e['start_time'];
     final DateTime dt = dateStr != null ? DateTime.parse(dateStr) : DateTime.now();
@@ -312,7 +315,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                   border: Border.all(color: (isStarted ? AppColors.accent2 : AppColors.success).withValues(alpha: 0.3)),
                                 ),
                                 child: Text(
-                                  isStarted ? 'STARTED' : 'OPEN FOR BOOKING',
+                                  isStarted ? language.translate('started').toUpperCase() : language.translate('open_for_booking').toUpperCase(),
                                   style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: isStarted ? AppColors.accent2 : AppColors.success, letterSpacing: 1),
                                 ),
                               ),
@@ -354,11 +357,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildInfoCard(Icons.calendar_today, 'Date & Time', '$formattedDate at $formattedTime'),
+                  _buildInfoCard(Icons.calendar_today, language.translate('date_time'), '$formattedDate at $formattedTime'),
                   const SizedBox(height: 12),
                   _buildInfoCard(
                     Icons.location_on_outlined, 
-                    'Venue', 
+                    language.translate('venue'), 
                     venueName,
                   ),
                   if (venueLocation.isNotEmpty && venueLocation.startsWith('http')) ...[
@@ -390,12 +393,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                           ));
                         }
                       },
-                      child: _buildInfoCard(Icons.person_outlined, 'Organized by', e['creator']?['name'] ?? 'Unknown'),
+                      child: _buildInfoCard(Icons.person_outlined, language.translate('organized_by'), e['creator']?['name'] ?? 'Unknown'),
                     ),
                   ],
                   const SizedBox(height: 24),
                   // Description
-                  _sectionTitle('About This Event', Icons.article_outlined),
+                  _sectionTitle(language.translate('about_event'), Icons.article_outlined),
                   const SizedBox(height: 10),
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -412,14 +415,14 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   // Agenda Section
                   if (e['agenda'] != null) ...[
                     const SizedBox(height: 24),
-                    _sectionTitle('Event Agenda', Icons.view_timeline_outlined),
+                    _sectionTitle(language.translate('event_agenda'), Icons.view_timeline_outlined),
                     const SizedBox(height: 12),
                     _buildAgenda(e['agenda']),
                   ],
                   // Sponsors section
                   if (sponsors.isNotEmpty) ...[
                     const SizedBox(height: 24),
-                    _sectionTitle('Event Sponsors', Icons.handshake_outlined),
+                    _sectionTitle(language.translate('event_sponsors'), Icons.handshake_outlined),
                     const SizedBox(height: 12),
                     SizedBox(
                       height: 80,
@@ -433,10 +436,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   // Rating section
                   if (canRate) ...[
                     const SizedBox(height: 24),
-                    _sectionTitle('Rate This Event', Icons.star_outline_rounded),
+                    _sectionTitle(language.translate('rate_review'), Icons.star_outline_rounded),
                     const SizedBox(height: 12),
                     GradientButton(
-                      text: 'Leave a Review',
+                      text: language.translate('leave_review'),
                       onPressed: () async {
                         final result = await showModalBottomSheet(
                           context: context,
@@ -462,7 +465,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _sectionTitle('Reviews ($_totalReviews)', Icons.rate_review_outlined),
+                        _sectionTitle('${language.translate('reviews')} ($_totalReviews)', Icons.rate_review_outlined),
                         TextButton(
                           onPressed: () {
                             Navigator.push(context, MaterialPageRoute(
@@ -472,7 +475,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                               ),
                             ));
                           },
-                          child: const Text('See All', style: TextStyle(color: AppColors.accent)),
+                          child: Text(language.translate('see_all'), style: const TextStyle(color: AppColors.accent)),
                         ),
                       ],
                     ),
@@ -501,7 +504,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               GradientButton(
-                text: _hasTicket ? 'Already Booked ✓' : 'Book Ticket',
+                text: _hasTicket ? '${language.translate('already_booked')} ✓' : language.translate('book_now'),
                 isLoading: _isBooking,
                 onPressed: _hasTicket ? () {} : _book,
                 icon: _hasTicket ? Icons.check_circle : Icons.confirmation_number_outlined,
@@ -516,7 +519,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     );
   }
 
+
   Widget _buildCapacityProgressBar(int booked, int total, double progress, bool isFull) {
+    final language = Provider.of<LanguageProvider>(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -533,7 +538,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               Row(children: [
                 Icon(Icons.people_outline, color: AppColors.accent, size: 20),
                 const SizedBox(width: 8),
-                const Text('Capacity & Bookings', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+                Text(language.translate('capacity_bookings'), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
               ]),
               Text(
                 '$booked / $total',
@@ -559,7 +564,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            isFull ? 'Sold Out!' : '${(progress * 100).toInt()}% Booked',
+            isFull ? language.translate('sold_out') : '${(progress * 100).toInt()}% ${language.translate('booked')}',
             style: TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.w500),
           ),
         ],
@@ -809,9 +814,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   Widget _buildAgendaItem(dynamic item) {
+    final language = Provider.of<LanguageProvider>(context, listen: false);
     final start = item['start_time'] ?? '';
     final end = item['end_time'] ?? '';
-    final title = item['title'] ?? 'Agenda Item';
+    final title = item['title'] ?? language.translate('agenda');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),

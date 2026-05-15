@@ -11,6 +11,7 @@ import 'auth/login_screen.dart';
 import 'user/my_tickets_screen.dart';
 import 'user/settings_screen.dart';
 import 'user/main_navigation.dart';
+import '../providers/language_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -153,6 +154,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
     final ticketProv = Provider.of<TicketProvider>(context);
+    final language = Provider.of<LanguageProvider>(context);
     final user = auth.user;
     final name = auth.userName;
     final userImage = user?['profile']?['logo'];
@@ -316,12 +318,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    Icon(Icons.verified, size: 14, color: AppColors.accent2),
-                    SizedBox(width: 4),
+                  children: [
+                    const Icon(Icons.verified, size: 14, color: AppColors.accent2),
+                    const SizedBox(width: 4),
                     Text(
-                      'Verified',
-                      style: TextStyle(
+                      language.translate('verified'),
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         color: AppColors.accent2,
@@ -333,7 +335,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 32),
 
               // ── Statistics ──
-              _buildSectionTitle('Statistics', null),
+              _buildSectionTitle(language.translate('statistics'), null),
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -341,14 +343,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     _buildStatCard(
                       icon: Icons.local_activity_rounded,
-                      label: 'Tickets Booked',
+                      label: language.translate('tickets_booked'),
                       value: ticketProv.myTickets.length.toString(),
                       color: AppColors.accent,
                     ),
                     const SizedBox(width: 16),
                     _buildStatCard(
                       icon: Icons.event_available_rounded,
-                      label: 'Events Attended',
+                      label: language.translate('events_attended'),
                       value: ticketProv.totalAttended.toString(),
                       color: AppColors.success,
                     ),
@@ -359,8 +361,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               // ── Interests ──
               _buildSectionTitle(
-                'Interests',
-                'Edit',
+                language.translate('interests'),
+                language.translate('edit'),
                 onTapAction: () => _showInterestsDialog(),
               ),
               const SizedBox(height: 12),
@@ -377,10 +379,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     border: Border.all(color: AppColors.border),
                   ),
                   child: _selectedInterests.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Text(
-                            'No interests added yet.',
-                            style: TextStyle(
+                            language.translate('no_interests'),
+                            style: const TextStyle(
                               color: AppColors.textMuted,
                               fontSize: 14,
                             ),
@@ -421,10 +423,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ],
                           ),
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
-                            'Edit Profile',
-                            style: TextStyle(
+                            language.translate('edit_profile'),
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: AppColors.accent2,
@@ -445,10 +447,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             color: AppColors.danger.withValues(alpha: 0.3),
                           ),
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
-                            'Log Out',
-                            style: TextStyle(
+                            language.translate('logout'),
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: AppColors.danger,
@@ -556,6 +558,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildInterestTag(String label) {
+    final language = Provider.of<LanguageProvider>(context);
     return Container(
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -566,7 +569,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: Center(
         child: Text(
-          label,
+          language.translate(label),
           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         ),
       ),
@@ -709,6 +712,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // ─── Edit Profile Dialog ──────────────────────
   void _showEditProfileDialog(BuildContext context, AuthProvider auth) {
+    final language = Provider.of<LanguageProvider>(context, listen: false);
     final nameCtrl = TextEditingController(text: auth.userName);
     final emailCtrl = TextEditingController(text: auth.userEmail);
     final passCtrl = TextEditingController();
@@ -722,36 +726,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          title: const Text(
-            'Edit Profile',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
-          ),
+        title: Text(
+          language.translate('edit_profile'),
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+        ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _dialogLabel('Full Name'),
+                _dialogLabel(language.translate('full_name')),
                 const SizedBox(height: 6),
                 TextField(
                   controller: nameCtrl,
-                  decoration: _dialogInput('Your full name'),
+                  decoration: _dialogInput(language.translate('your_full_name')),
                 ),
                 const SizedBox(height: 16),
-                _dialogLabel('Email Address'),
+                _dialogLabel(language.translate('email_address')),
                 const SizedBox(height: 6),
                 TextField(
                   controller: emailCtrl,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: _dialogInput('you@example.com'),
+                  decoration: _dialogInput(language.translate('email_hint')),
                 ),
                 const SizedBox(height: 16),
-                _dialogLabel('New Password (optional)'),
+                _dialogLabel(language.translate('new_password_optional')),
                 const SizedBox(height: 6),
                 TextField(
                   controller: passCtrl,
                   obscureText: true,
-                  decoration: _dialogInput('Leave empty to keep current'),
+                  decoration: _dialogInput(language.translate('pass_hint')),
                 ),
               ],
             ),
@@ -759,9 +763,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text(
-                'Cancel',
-                style: TextStyle(color: AppColors.textMuted),
+              child: Text(
+                language.translate('cancel'),
+                style: const TextStyle(color: AppColors.textMuted),
               ),
             ),
             TextButton(
@@ -782,20 +786,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         final data = jsonDecode(res.body);
                         if (res.statusCode == 200) {
                           // Update local user data
-                          await auth.checkAuth();
+                          await auth.refreshUser();
                           if (ctx.mounted) Navigator.pop(ctx);
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Row(
+                                content: Row(
                                   children: [
-                                    Icon(
+                                    const Icon(
                                       Icons.check_circle,
                                       color: Colors.white,
                                       size: 20,
                                     ),
-                                    SizedBox(width: 8),
-                                    Text('Profile updated!'),
+                                    const SizedBox(width: 8),
+                                    Text(language.translate('profile_updated')),
                                   ],
                                 ),
                                 backgroundColor: AppColors.success,
@@ -838,9 +842,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text(
-                      'Save',
-                      style: TextStyle(
+                  : Text(
+                      language.translate('update'),
+                      style: const TextStyle(
                         color: AppColors.accent,
                         fontWeight: FontWeight.w700,
                       ),
@@ -888,6 +892,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // ─── Notifications Sheet ──────────────────────
   void _showNotificationsSheet(BuildContext context) {
+    final language = Provider.of<LanguageProvider>(context, listen: false);
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.bgCard,
@@ -922,9 +927,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     size: 22,
                   ),
                   const SizedBox(width: 10),
-                  const Text(
-                    'Notifications',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+                  Text(
+                    language.translate('notifications'),
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
                   ),
                   const Spacer(),
                   if (_unreadCount > 0) ...[
@@ -942,9 +947,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: AppColors.accent.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Text(
-                          'Mark All Read',
-                          style: TextStyle(
+                        child: Text(
+                          language.translate('mark_all_read'),
+                          style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: AppColors.accent,
@@ -1139,6 +1144,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // ─── Interests Dialog ──────────────────────
   void _showInterestsDialog() {
+    final language = Provider.of<LanguageProvider>(context, listen: false);
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -1147,9 +1153,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          title: const Text(
-            'Select Interests',
-            style: TextStyle(fontWeight: FontWeight.bold),
+          title: Text(
+            language.translate('select_interests'),
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           content: SingleChildScrollView(
             child: Wrap(
@@ -1183,7 +1189,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     child: Text(
-                      cat,
+                      language.translate(cat),
                       style: TextStyle(
                         color: isSelected ? AppColors.accent : Colors.white,
                         fontSize: 13,
@@ -1200,9 +1206,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text(
-                'Done',
-                style: TextStyle(
+              child: Text(
+                language.translate('done'),
+                style: const TextStyle(
                   color: AppColors.accent,
                   fontWeight: FontWeight.bold,
                 ),
@@ -1216,25 +1222,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // ─── Logout Dialog ──────────────────────
   void _showLogoutDialog(BuildContext context, AuthProvider auth) {
+    final language = Provider.of<LanguageProvider>(context, listen: false);
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppColors.bgCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Logout',
-          style: TextStyle(fontWeight: FontWeight.w700),
+        title: Text(
+          language.translate('logout'),
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
-        content: const Text(
-          'Are you sure you want to logout?',
-          style: TextStyle(color: AppColors.textMuted),
+        content: Text(
+          language.translate('confirm_logout'),
+          style: const TextStyle(color: AppColors.textMuted),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: AppColors.textMuted),
+            child: Text(
+              language.translate('cancel'),
+              style: const TextStyle(color: AppColors.textMuted),
             ),
           ),
           TextButton(
@@ -1248,9 +1255,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 );
               }
             },
-            child: const Text(
-              'Logout',
-              style: TextStyle(
+            child: Text(
+              language.translate('logout'),
+              style: const TextStyle(
                 color: AppColors.danger,
                 fontWeight: FontWeight.w700,
               ),

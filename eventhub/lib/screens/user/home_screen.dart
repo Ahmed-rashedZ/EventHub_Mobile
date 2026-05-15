@@ -4,6 +4,7 @@ import '../../providers/event_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/ticket_provider.dart';
 import '../../utils/constants.dart';
+import '../../providers/language_provider.dart';
 import 'event_details_screen.dart';
 import 'my_tickets_screen.dart';
 import 'qr_code_screen.dart';
@@ -20,6 +21,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String _search = '';
   String _selectedCategory = 'All';
+  String _headerTitle = '';
+  static bool _hasShownGreeting = false;
   final _categories = ['All', 'Technical', 'Workshop', 'Conference', 'Seminar', 'Cultural', 'Other'];
 
   final Map<String, IconData> _catIcons = {
@@ -48,6 +51,39 @@ class _HomeScreenState extends State<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<EventProvider>(context, listen: false).fetchEvents();
       Provider.of<TicketProvider>(context, listen: false).fetchMyTickets();
+      _startHeaderAnimation();
+    });
+  }
+
+  void _startHeaderAnimation() {
+    final language = Provider.of<LanguageProvider>(context, listen: false);
+    
+    if (_hasShownGreeting) {
+      setState(() => _headerTitle = 'EventHub');
+      return;
+    }
+
+    _hasShownGreeting = true;
+
+    // Step 1: Start as EventHub
+    setState(() => _headerTitle = 'EventHub');
+
+    // Step 2: After 1 second, change to Hello/Marhaba
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        setState(() {
+          _headerTitle = language.isArabic ? 'مرحباً' : 'Hello';
+        });
+
+        // Step 3: After 2 more seconds, revert back to EventHub
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            setState(() {
+              _headerTitle = 'EventHub';
+            });
+          }
+        });
+      }
     });
   }
 
@@ -108,77 +144,80 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
-        builder: (context, setSheetState) => Container(
-          decoration: const BoxDecoration(
-            color: AppColors.bgCard,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Filters', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: AppColors.textMuted),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              const Text('Categories', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _categories.map((cat) {
-                  final isSelected = tempCategory == cat;
-                  return GestureDetector(
-                    onTap: () {
-                      setSheetState(() => tempCategory = cat);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppColors.accent : AppColors.bgCard2,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: isSelected ? AppColors.accent : AppColors.border),
-                      ),
-                      child: Text(
-                        cat,
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : AppColors.textMuted,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        builder: (context, setSheetState) {
+          final language = Provider.of<LanguageProvider>(context);
+          return Container(
+            decoration: const BoxDecoration(
+              color: AppColors.bgCard,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(language.translate('filters'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: AppColors.textMuted),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(language.translate('categories'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _categories.map((cat) {
+                    final isSelected = tempCategory == cat;
+                    return GestureDetector(
+                      onTap: () {
+                        setSheetState(() => tempCategory = cat);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected ? AppColors.accent : AppColors.bgCard2,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: isSelected ? AppColors.accent : AppColors.border),
+                        ),
+                        child: Text(
+                          language.translate(cat.toLowerCase()),
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : AppColors.textMuted,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    setState(() => _selectedCategory = tempCategory);
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accent,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: const Text('Apply Filters', style: TextStyle(fontWeight: FontWeight.bold)),
+                    );
+                  }).toList(),
                 ),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() => _selectedCategory = tempCategory);
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.accent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Text(language.translate('apply_filters'), style: const TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -188,6 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final auth = Provider.of<AuthProvider>(context);
     final eventProv = Provider.of<EventProvider>(context);
     final ticketProv = Provider.of<TicketProvider>(context);
+    final language = Provider.of<LanguageProvider>(context);
     
     final name = auth.userName;
     final userImage = auth.user?['profile']?['logo'];
@@ -253,7 +293,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
-                            Text('Welcome to $name.', style: TextStyle(fontSize: 13, color: AppColors.textMuted.withValues(alpha: 0.8))),
                           ],
                         ),
                       ),
@@ -264,15 +303,38 @@ class _HomeScreenState extends State<HomeScreen> {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ).createShader(bounds),
-                        child: const Text(
-                          'EventHub',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            letterSpacing: -1.0,
-                          ),
-                        ),
+                        child: _hasShownGreeting && _headerTitle == 'EventHub'
+                            ? const Text(
+                                'EventHub',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                  letterSpacing: -1.0,
+                                ),
+                              )
+                            : AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 600),
+                                transitionBuilder: (child, animation) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: ScaleTransition(
+                                      scale: animation,
+                                      child: child,
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  _headerTitle.isEmpty ? 'EventHub' : _headerTitle,
+                                  key: ValueKey(_headerTitle),
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                    letterSpacing: -1.0,
+                                  ),
+                                ),
+                              ),
                       ),
                     ],
                   ),
@@ -295,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: TextField(
                             onChanged: (v) => setState(() => _search = v),
                             decoration: InputDecoration(
-                              hintText: 'Search',
+                              hintText: language.translate('search'),
                               prefixIcon: const Icon(Icons.search_rounded, size: 20, color: AppColors.textMuted),
                               suffixIcon: const Icon(Icons.tune_rounded, size: 20, color: AppColors.textMuted),
                               border: InputBorder.none,
@@ -316,11 +378,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(color: AppColors.border),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
-                              Text('Filters', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                              SizedBox(width: 8),
-                              Icon(Icons.tune_rounded, size: 18),
+                              Text(language.translate('filters'), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                              const SizedBox(width: 8),
+                              const Icon(Icons.tune_rounded, size: 18),
                             ],
                           ),
                         ),
@@ -339,12 +401,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Row(
                           children: [
-                            const Text('Live Events', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
+                            Text(language.translate('live_events'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
                             const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(4)),
-                              child: const Text('LIVE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
+                              child: Text(language.translate('live'), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
                             ),
                           ],
                         ),
@@ -368,7 +430,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 // ── Upcoming Events Section ──
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: const Text('Upcoming Events', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
+                  child: Text(language.translate('upcoming_events'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
                 ),
                 const SizedBox(height: 16),
                 eventProv.isLoadingEvents
@@ -388,14 +450,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                   TextButton(
                                     onPressed: () => eventProv.fetchEvents(),
-                                    child: const Text('Retry'),
+                                    child: Text(language.translate('retry')),
                                   ),
                                 ],
                               ),
                             ),
                           )
                         : upcomingEvents.isEmpty
-                            ? _emptyStateHorizontal('No upcoming events')
+                            ? _emptyStateHorizontal(language.translate('no_upcoming_events'))
                             : GridView.builder(
                             padding: const EdgeInsets.symmetric(horizontal: 20),
                             shrinkWrap: true,
@@ -580,6 +642,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildUpcomingEventCard(Map<String, dynamic> event) {
+    final language = Provider.of<LanguageProvider>(context, listen: false);
     final title = event['title'] ?? 'Untitled';
     final venueName = event['venue']?['name'] ?? 'TBA';
     final startStr = event['start_time'];
@@ -637,9 +700,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(venueName, style: TextStyle(fontSize: 12, color: AppColors.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 8),
                 if (event['is_tickets_open'] == false || event['is_tickets_open'] == 0)
-                  const Text('Booking Closed', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.danger))
+                  Text(language.translate('booking_closed'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.danger))
                 else
-                  const Text('Selling Fast', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.warning)),
+                  Text(language.translate('selling_fast'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.warning)),
                 const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
@@ -652,7 +715,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: const Text('View Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    child: Text(language.translate('view_details'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -664,6 +727,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildPastEventItem(Map<String, dynamic> event) {
+    final language = Provider.of<LanguageProvider>(context, listen: false);
     final title = event['title'] ?? 'Untitled';
     final startStr = event['start_time'];
     final date = startStr != null ? DateTime.tryParse(startStr) : null;
@@ -704,7 +768,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              const Text('Rate & Review', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+              Text(language.translate('rate_review'), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
               const SizedBox(height: 4),
               Row(
                 children: List.generate(5, (index) => const Icon(Icons.star_rounded, size: 14, color: AppColors.warning)),

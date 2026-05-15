@@ -10,7 +10,9 @@ import 'providers/auth_provider.dart';
 import 'providers/event_provider.dart';
 import 'providers/ticket_provider.dart';
 import 'providers/notification_provider.dart';
+import 'providers/language_provider.dart';
 import 'screens/splash_screen.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'services/fcm_service.dart';
 
 void main() async {
@@ -45,6 +47,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => EventProvider()),
         ChangeNotifierProvider(create: (_) => TicketProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
       ],
       child: const EventHubApp(),
     ),
@@ -56,9 +59,21 @@ class EventHubApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final language = Provider.of<LanguageProvider>(context);
+
     return MaterialApp(
       title: 'EventHub',
       debugShowCheckedModeBanner: false,
+      locale: language.locale,
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'),
+        Locale('ar'),
+      ],
       theme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: AppColors.bgDark,

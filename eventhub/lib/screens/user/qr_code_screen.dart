@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../utils/constants.dart';
+import 'package:provider/provider.dart';
+import '../../providers/language_provider.dart';
 
 class QRCodeScreen extends StatelessWidget {
   final String qrCode;
@@ -18,10 +20,11 @@ class QRCodeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final language = Provider.of<LanguageProvider>(context);
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       appBar: AppBar(
-        title: const Text('Access Ticket', style: TextStyle(fontWeight: FontWeight.w700)),
+        title: Text(language.translate('access_ticket'), style: const TextStyle(fontWeight: FontWeight.w700)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -91,9 +94,9 @@ class QRCodeScreen extends StatelessWidget {
                       padding: const EdgeInsets.all(32),
                       child: Column(
                         children: [
-                          const Text(
-                            'Scan at the entrance',
-                            style: TextStyle(
+                          Text(
+                            language.translate('scan_entrance'),
+                            style: const TextStyle(
                               color: Colors.black54,
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
@@ -147,7 +150,7 @@ class QRCodeScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  isUsed ? 'TICKET USED' : 'VALID TICKET',
+                                  isUsed ? language.translate('ticket_used').toUpperCase() : language.translate('valid_ticket').toUpperCase(),
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700,
@@ -161,7 +164,7 @@ class QRCodeScreen extends StatelessWidget {
                           const SizedBox(height: 16),
                           // Ticket ID
                           Text(
-                            'TICKET #$ticketId',
+                            '${language.translate('ticket_label')} #$ticketId',
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 14,
@@ -187,7 +190,7 @@ class QRCodeScreen extends StatelessWidget {
               const SizedBox(height: 24),
               // Info text
               Text(
-                'Keep this QR code safe. You will need it to enter the event.',
+                language.translate('qr_safe_msg'),
                 style: TextStyle(
                   color: AppColors.textMuted.withValues(alpha: 0.7),
                   fontSize: 13,

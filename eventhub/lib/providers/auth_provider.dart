@@ -39,6 +39,17 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> refreshUser() async {
+    try {
+      final res = await _api.get('/profile');
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        final newUser = data['user'] ?? data;
+        await updateUser(newUser);
+      }
+    } catch (_) {}
+  }
+
   Future<String?> login(String email, String password) async {
     try {
       final res = await _api.post('/login', {

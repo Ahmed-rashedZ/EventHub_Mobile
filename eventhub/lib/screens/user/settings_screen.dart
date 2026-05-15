@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
 import '../../utils/constants.dart';
+import '../../providers/language_provider.dart';
 import '../auth/login_screen.dart';
 import '../auth/forgot_password_screen.dart';
 
@@ -20,13 +21,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
+    final language = Provider.of<LanguageProvider>(context);
 
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(language.translate('settings')),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          icon: Icon(
+            language.isArabic ? Icons.arrow_back_ios_rounded : Icons.arrow_back_ios_new_rounded, 
+            size: 20
+          ),
           onPressed: () => Navigator.pop(context), 
         ),
       ),
@@ -35,12 +40,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSection('Account', [
-              _buildSettingItem(Icons.alternate_email_rounded, 'Change Email', onTap: () => _showChangeEmailDialog(context, auth)),
-              _buildSettingItem(Icons.lock_outline_rounded, 'Change Password', onTap: () => _showChangePasswordDialog(context)),
+            _buildSection(language.translate('account'), [
+              _buildSettingItem(Icons.alternate_email_rounded, language.translate('change_email'), onTap: () => _showChangeEmailDialog(context, auth, language)),
+              _buildSettingItem(Icons.lock_outline_rounded, language.translate('change_password'), onTap: () => _showChangePasswordDialog(context, language)),
             ]),
-            _buildSection('Notifications', [
-              _buildSettingItem(Icons.notifications_active_outlined, 'Push Notifications', 
+            _buildSection(language.translate('notifications'), [
+              _buildSettingItem(Icons.notifications_active_outlined, language.translate('push_notifications'), 
                 trailing: Switch.adaptive(
                   value: _pushNotifications, 
                   onChanged: (v) => setState(() => _pushNotifications = v),
@@ -48,21 +53,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
             ]),
-            _buildSection('App Preferences', [
-              _buildSettingItem(Icons.language_rounded, 'Language', 
-                trailing: const Text('English >', style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
-                onTap: () => _showLanguageSheet(context),
+            _buildSection(language.translate('app_preferences'), [
+              _buildSettingItem(Icons.language_rounded, language.translate('language'), 
+                trailing: Text(
+                  '${language.isArabic ? 'العربية' : 'English'} >', 
+                  style: const TextStyle(fontSize: 13, color: AppColors.textMuted)
+                ),
+                onTap: () => _showLanguageSheet(context, language),
               ),
             ]),
-            _buildSection('Support', [
-              _buildSettingItem(Icons.help_outline_rounded, 'Help Center'),
-              _buildSettingItem(Icons.contact_support_outlined, 'Contact Support', onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opening Support...'), behavior: SnackBarBehavior.floating));
+            _buildSection(language.translate('support'), [
+              _buildSettingItem(Icons.help_outline_rounded, language.translate('help_center')),
+              _buildSettingItem(Icons.contact_support_outlined, language.translate('contact_support'), onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(language.translate('support')), behavior: SnackBarBehavior.floating));
               }),
             ]),
-            _buildSection('About', [
-              _buildSettingItem(Icons.info_outline_rounded, 'Version 2.3.1'),
-              _buildSettingItem(Icons.gavel_rounded, 'Legal Notices', onTap: () => _showLegalDialog(context)),
+            _buildSection(language.translate('about'), [
+              _buildSettingItem(Icons.info_outline_rounded, '${language.translate('version')} 2.3.1'),
+              _buildSettingItem(Icons.gavel_rounded, language.translate('legal_notices'), onTap: () => _showLegalDialog(context)),
             ]),
             const SizedBox(height: 32),
             
@@ -70,7 +78,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 0),
               child: GestureDetector(
-                onTap: () => _showLogoutDialog(context, auth),
+                onTap: () => _showLogoutDialog(context, auth, language),
                 child: Container(
                   width: double.infinity,
                   height: 56,
@@ -79,8 +87,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: AppColors.danger.withValues(alpha: 0.2)),
                   ),
-                  child: const Center(
-                    child: Text('Log Out', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold, fontSize: 16)),
+                  child: Center(
+                    child: Text(language.translate('logout'), style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 ),
               ),
@@ -135,18 +143,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showLogoutDialog(BuildContext context, AuthProvider auth) {
+  void _showLogoutDialog(BuildContext context, AuthProvider auth, LanguageProvider language) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppColors.bgCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Logout', style: TextStyle(fontWeight: FontWeight.w700)),
-        content: const Text('Are you sure you want to logout?', style: TextStyle(color: AppColors.textMuted)),
+        title: Text(language.translate('logout'), style: const TextStyle(fontWeight: FontWeight.w700)),
+        content: Text(language.translate('confirm_logout'), style: const TextStyle(color: AppColors.textMuted)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
+            child: Text(language.translate('cancel'), style: const TextStyle(color: AppColors.textMuted)),
           ),
           TextButton(
             onPressed: () async {
@@ -159,14 +167,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 );
               }
             },
-            child: const Text('Logout', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
+            child: Text(language.translate('logout'), style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
     );
   }
 
-  void _showChangeEmailDialog(BuildContext context, AuthProvider auth) {
+  void _showChangeEmailDialog(BuildContext context, AuthProvider auth, LanguageProvider language) {
     final currentEmailCtrl = TextEditingController(text: auth.userEmail);
     final newEmailCtrl = TextEditingController();
     final passwordCtrl = TextEditingController();
@@ -178,35 +186,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: AppColors.bgCard,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Change Email',
-              style: TextStyle(fontWeight: FontWeight.w700)),
+          title: Text(language.translate('change_email'),
+              style: const TextStyle(fontWeight: FontWeight.w700)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Enter your new email and verify your identity',
-                    style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                Text(language.translate('verify_identity'),
+                    style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
                 const SizedBox(height: 16),
-                _dialogLabel('Current Email'),
+                _dialogLabel(language.translate('current_email')),
                 const SizedBox(height: 6),
-                _dialogInput(currentEmailCtrl, 'Current email', false),
+                _dialogInput(currentEmailCtrl, language.translate('current_email'), false),
                 const SizedBox(height: 16),
-                _dialogLabel('New Email'),
+                _dialogLabel(language.translate('new_email')),
                 const SizedBox(height: 6),
-                _dialogInput(newEmailCtrl, 'New email', false),
+                _dialogInput(newEmailCtrl, language.translate('new_email'), false),
                 const SizedBox(height: 16),
-                _dialogLabel('Current Password'),
+                _dialogLabel(language.translate('current_password')),
                 const SizedBox(height: 6),
-                _dialogInput(passwordCtrl, 'Your password', true),
+                _dialogInput(passwordCtrl, language.translate('current_password'), true),
               ],
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel',
-                  style: TextStyle(color: AppColors.textMuted)),
+              child: Text(language.translate('cancel'),
+                  style: const TextStyle(color: AppColors.textMuted)),
             ),
             TextButton(
               onPressed: isLoading
@@ -215,8 +223,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       if (newEmailCtrl.text.trim().isEmpty) return;
                       setDialogState(() => isLoading = true);
                       try {
-                        // Assuming backend handles email change with password verification
-                        // For now we use the existing profile update endpoint
                         final api = ApiService();
                         final res = await api.put('/profile', {
                           'email': newEmailCtrl.text.trim(),
@@ -229,8 +235,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           if (ctx.mounted) Navigator.pop(ctx);
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Email updated successfully!'),
+                               SnackBar(
+                                content: Text(language.translate('email_updated')),
                                 backgroundColor: AppColors.success,
                                 behavior: SnackBarBehavior.floating,
                               ),
@@ -265,8 +271,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Text('Change',
-                      style: TextStyle(
+                  : Text(language.translate('change'),
+                      style: const TextStyle(
                           color: AppColors.accent,
                           fontWeight: FontWeight.bold)),
             ),
@@ -285,7 +291,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             letterSpacing: 0.5));
   }
 
-  void _showChangePasswordDialog(BuildContext context) {
+  void _showChangePasswordDialog(BuildContext context, LanguageProvider language) {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final currentCtrl = TextEditingController();
     final newCtrl = TextEditingController();
@@ -296,43 +302,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Change Password', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(language.translate('change_password'), style: const TextStyle(fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Verify your identity to continue', style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
+            Text(language.translate('verify_identity'), style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
             const SizedBox(height: 16),
-            _dialogInput(currentCtrl, 'Current Password', true),
+            _dialogInput(currentCtrl, language.translate('current_password'), true),
             const SizedBox(height: 12),
-            _dialogInput(newCtrl, 'New Password', true),
+            _dialogInput(newCtrl, language.translate('new_password'), true),
             const SizedBox(height: 12),
-            _dialogInput(confirmCtrl, 'Confirm New Password', true),
+            _dialogInput(confirmCtrl, language.translate('confirm_password'), true),
             const SizedBox(height: 12),
             Align(
-              alignment: Alignment.centerRight,
+              alignment: language.isArabic ? Alignment.centerLeft : Alignment.centerRight,
               child: TextButton(
                 onPressed: () {
                   Navigator.pop(ctx);
                   Navigator.push(context, MaterialPageRoute(builder: (_) => ForgotPasswordScreen(email: auth.userEmail)));
                 },
-                child: const Text('Forgot password?', style: TextStyle(color: AppColors.accent2, fontSize: 13)),
+                child: Text(language.translate('forgot_password'), style: const TextStyle(color: AppColors.accent2, fontSize: 13)),
               ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(language.translate('cancel'), style: const TextStyle(color: AppColors.textMuted))),
           TextButton(
             onPressed: () {
               if (newCtrl.text != confirmCtrl.text) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Passwords do not match'), backgroundColor: AppColors.danger));
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(language.translate('passwords_not_match')), backgroundColor: AppColors.danger));
                 return;
               }
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password updated successfully!'), backgroundColor: AppColors.success));
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(language.translate('password_updated')), backgroundColor: AppColors.success));
             }, 
-            child: const Text('Update', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold))
+            child: Text(language.translate('update'), style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold))
           ),
         ],
       ),
@@ -356,7 +362,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showLanguageSheet(BuildContext context) {
+  void _showLanguageSheet(BuildContext context, LanguageProvider language) {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.bgCard,
@@ -364,9 +370,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (_) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const ListTile(title: Text('Select Language', style: TextStyle(fontWeight: FontWeight.bold))),
-          ListTile(title: const Text('English'), trailing: const Icon(Icons.check, color: AppColors.accent2), onTap: () => Navigator.pop(context)),
-          ListTile(title: const Text('Arabic (العربية)'), onTap: () => Navigator.pop(context)),
+          ListTile(title: Text(language.translate('select_language'), style: const TextStyle(fontWeight: FontWeight.bold))),
+          ListTile(
+            title: Text(language.translate('english')), 
+            trailing: !language.isArabic ? const Icon(Icons.check, color: AppColors.accent2) : null, 
+            onTap: () {
+              language.setLanguage('en');
+              Navigator.pop(context);
+            }
+          ),
+          ListTile(
+            title: Text(language.translate('arabic')), 
+            trailing: language.isArabic ? const Icon(Icons.check, color: AppColors.accent2) : null, 
+            onTap: () {
+              language.setLanguage('ar');
+              Navigator.pop(context);
+            }
+          ),
           const SizedBox(height: 20),
         ],
       ),

@@ -4,6 +4,7 @@ import '../../providers/ticket_provider.dart';
 import '../../utils/constants.dart';
 import 'qr_code_screen.dart';
 import 'event_details_screen.dart';
+import '../../providers/language_provider.dart';
 
 class MyTicketsScreen extends StatefulWidget {
   const MyTicketsScreen({super.key});
@@ -45,6 +46,7 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     final ticketProv = Provider.of<TicketProvider>(context);
+    final language = Provider.of<LanguageProvider>(context);
 
     return Scaffold(
       backgroundColor: AppColors.bgDark,
@@ -56,7 +58,7 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Row(
                 children: [
-                  const Expanded(child: Text('My Tickets', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.5))),
+                  Expanded(child: Text(language.translate('my_tickets'), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.5))),
                   GestureDetector(
                     onTap: () => ticketProv.fetchMyTickets(),
                     child: Container(
@@ -82,12 +84,12 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
                 child: TextField(
                   onChanged: (v) => setState(() => _search = v),
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    hintText: 'Search tickets...',
-                    hintStyle: TextStyle(color: AppColors.textMuted),
-                    prefixIcon: Icon(Icons.search_rounded, size: 20, color: AppColors.textMuted),
+                  decoration: InputDecoration(
+                    hintText: '${language.translate('search')}...',
+                    hintStyle: const TextStyle(color: AppColors.textMuted),
+                    prefixIcon: const Icon(Icons.search_rounded, size: 20, color: AppColors.textMuted),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
               ),
@@ -114,8 +116,8 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
                 labelColor: Colors.white,
                 unselectedLabelColor: AppColors.textMuted,
                 tabs: [
-                  Tab(text: 'Upcoming (${_filterTickets(ticketProv.upcomingTickets).length})'),
-                  Tab(text: 'History (${_filterTickets(ticketProv.pastTickets).length})'),
+                  Tab(text: '${language.translate('upcoming_events')} (${_filterTickets(ticketProv.upcomingTickets).length})'),
+                  Tab(text: '${language.translate('history')} (${_filterTickets(ticketProv.pastTickets).length})'),
                 ],
               ),
             ),
@@ -139,6 +141,7 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
   }
 
   Widget _buildTicketList(List<dynamic> tickets, {required bool isUpcoming}) {
+    final language = Provider.of<LanguageProvider>(context);
     if (tickets.isEmpty) {
       return Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -152,12 +155,12 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
           ),
           const SizedBox(height: 16),
           Text(
-            isUpcoming ? 'No upcoming tickets' : 'No past events',
+            isUpcoming ? language.translate('no_upcoming_events') : language.translate('no_history'),
             style: TextStyle(color: AppColors.textMuted.withValues(alpha: 0.6), fontSize: 15),
           ),
           if (isUpcoming) ...[
             const SizedBox(height: 8),
-            Text('Book a ticket from Explore tab', style: TextStyle(color: AppColors.textMuted.withValues(alpha: 0.4), fontSize: 13)),
+            Text(language.translate('book_ticket_hint'), style: TextStyle(color: AppColors.textMuted.withValues(alpha: 0.4), fontSize: 13)),
           ],
         ]),
       );
@@ -174,6 +177,7 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
   }
 
   Widget _buildTicketCard(Map<String, dynamic> ticket, {required bool isUpcoming}) {
+    final language = Provider.of<LanguageProvider>(context);
     final event = ticket['event'] as Map<String, dynamic>? ?? {};
     final title = event['title']?.toString() ?? 'Unknown Event';
     final qrCode = ticket['qr_code']?.toString() ?? '';
@@ -226,7 +230,7 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              (isUsed ? 'ATTENDED' : (isUpcoming ? 'ACTIVE' : 'EXPIRED')).toUpperCase(),
+                              (isUsed ? language.translate('attended') : (isUpcoming ? language.translate('active') : language.translate('expired'))).toUpperCase(),
                               style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
                             ),
                           ),
@@ -254,7 +258,7 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                               minimumSize: const Size(0, 34),
                             ),
-                            child: Text(isUsed ? 'View Summary' : 'View Tickets', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            child: Text(isUsed ? language.translate('view_details') : language.translate('view_tickets'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),
