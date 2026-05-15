@@ -33,14 +33,27 @@ class LanguageProvider with ChangeNotifier {
   bool get isArabic => _locale.languageCode == 'ar';
 
   String translate(String key) {
+    final cleanKey = key.toLowerCase().trim();
     if (isArabic) {
-      return _arabicStrings[key.toLowerCase()] ?? key;
+      return _arabicStrings[cleanKey] ?? key;
     } else {
-      return _englishStrings[key.toLowerCase()] ?? key;
+      return _englishStrings[cleanKey] ?? key;
     }
   }
 
   static const Map<String, String> _englishStrings = {
+    // Categories from DB (Arabic Keys -> English Values)
+    'مؤتمر': 'Conference',
+    'ندوة': 'Seminar',
+    'ورشة عمل': 'Workshop',
+    'دورة تدريبية': 'Training Course',
+    'ترفيه': 'Entertainment',
+    'ملتقى علمي': 'Scientific Forum',
+    'رياضة': 'Sports',
+    'تقنية': 'Technical',
+    'اجتماعية': 'Social',
+    'معرض': 'Exhibition',
+
     'settings': 'Settings',
     'account': 'Account',
     'notifications': 'Notifications',
@@ -186,6 +199,18 @@ class LanguageProvider with ChangeNotifier {
   };
 
   static const Map<String, String> _arabicStrings = {
+    // Categories from DB (Arabic Keys -> Arabic Values)
+    'مؤتمر': 'مؤتمر',
+    'ندوة': 'ندوة',
+    'ورشة عمل': 'ورشة عمل',
+    'دورة تدريبية': 'دورة تدريبية',
+    'ترفيه': 'ترفيه',
+    'ملتقى علمي': 'ملتقى علمي',
+    'رياضة': 'رياضة',
+    'تقنية': 'تقنية',
+    'اجتماعية': 'اجتماعية',
+    'معرض': 'معرض',
+
     'settings': 'الإعدادات',
     'account': 'الحساب',
     'notifications': 'الإشعارات',

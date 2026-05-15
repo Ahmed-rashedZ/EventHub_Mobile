@@ -26,25 +26,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int _unreadCount = 0;
   bool _isUploadingImage = false;
   List<String> _selectedInterests = [];
-  final List<String> _allCategories = [
-    'Technical',
-    'Workshop',
-    'Conference',
-    'Seminar',
-    'Cultural',
-    'Business',
-    'AI',
-    'Networking',
-    'FinTech',
-    'Innovation',
-    'Sustainability',
-    'Entrepreneurship',
-  ];
+  List<String> _allCategories = [];
 
   @override
   void initState() {
     super.initState();
     _fetchNotifications();
+    _fetchCategories();
+  }
+
+  Future<void> _fetchCategories() async {
+    try {
+      final api = ApiService();
+      final res = await api.get('/categories');
+      if (res.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(res.body);
+        setState(() {
+          _allCategories = data.map((e) => e.toString()).toList();
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _fetchNotifications() async {
@@ -291,13 +292,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              Text(
-                name,
-                style: const TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => _showEditProfileDialog(context, auth),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent2.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.accent2.withValues(alpha: 0.2)),
+                      ),
+                      child: const Icon(
+                        Icons.edit_outlined,
+                        size: 16,
+                        color: AppColors.accent2,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const Text(
                 'Tech Enthusiast & Attendee',
@@ -406,35 +429,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   children: [
-                    GestureDetector(
-                      onTap: () => _showEditProfileDialog(context, auth),
-                      child: Container(
-                        width: double.infinity,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppColors.accent2.withValues(alpha: 0.5),
-                          ),
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.accent2.withValues(alpha: 0.1),
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            language.translate('edit_profile'),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.accent2,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
                     const SizedBox(height: 16),
                     GestureDetector(
                       onTap: () => _showLogoutDialog(context, auth),
@@ -741,22 +735,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   controller: nameCtrl,
                   decoration: _dialogInput(language.translate('your_full_name')),
                 ),
-                const SizedBox(height: 16),
-                _dialogLabel(language.translate('email_address')),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: emailCtrl,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: _dialogInput(language.translate('email_hint')),
-                ),
-                const SizedBox(height: 16),
-                _dialogLabel(language.translate('new_password_optional')),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: passCtrl,
-                  obscureText: true,
-                  decoration: _dialogInput(language.translate('pass_hint')),
-                ),
               ],
             ),
           ),
@@ -777,11 +755,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         final api = ApiService();
                         final body = <String, dynamic>{
                           'name': nameCtrl.text.trim(),
-                          'email': emailCtrl.text.trim(),
+                          'email': auth.userEmail,
                         };
-                        if (passCtrl.text.trim().isNotEmpty) {
-                          body['password'] = passCtrl.text.trim();
-                        }
                         final res = await api.put('/profile', body);
                         final data = jsonDecode(res.body);
                         if (res.statusCode == 200) {

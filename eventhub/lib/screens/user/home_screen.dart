@@ -584,12 +584,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           onPressed: () {
                             final qrCode = ticket['qr_code']?.toString() ?? '';
                             final ticketId = ticket['id']?.toString() ?? '';
+                            final ticketNumber = ticket['ticket_number']?.toString() ?? ticketId;
                             final isUsed = ticket['status'] == 'used';
                             Navigator.push(context, MaterialPageRoute(
                               builder: (_) => QRCodeScreen(
                                 qrCode: qrCode,
                                 eventTitle: title,
                                 ticketId: ticketId,
+                                ticketNumber: ticketNumber,
                                 isUsed: isUsed,
                               ),
                             ));

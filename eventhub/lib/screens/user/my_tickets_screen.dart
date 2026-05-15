@@ -182,6 +182,7 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
     final title = event['title']?.toString() ?? 'Unknown Event';
     final qrCode = ticket['qr_code']?.toString() ?? '';
     final ticketId = ticket['id']?.toString() ?? '';
+    final ticketNumber = ticket['ticket_number']?.toString() ?? ticketId;
     final status = ticket['status']?.toString() ?? 'active';
     final isUsed = status == 'used';
 
@@ -229,9 +230,21 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
                               color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(6),
                             ),
-                            child: Text(
-                              (isUsed ? language.translate('attended') : (isUpcoming ? language.translate('active') : language.translate('expired'))).toUpperCase(),
-                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  (isUsed ? language.translate('attended') : (isUpcoming ? language.translate('active') : language.translate('expired'))).toUpperCase(),
+                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                                ),
+                                const SizedBox(width: 6),
+                                Container(width: 1, height: 10, color: Colors.white.withValues(alpha: 0.3)),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '#$ticketNumber',
+                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -246,6 +259,7 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
                                   qrCode: qrCode,
                                   eventTitle: title,
                                   ticketId: ticketId,
+                                  ticketNumber: ticketNumber,
                                   isUsed: isUsed,
                                 ),
                               ));

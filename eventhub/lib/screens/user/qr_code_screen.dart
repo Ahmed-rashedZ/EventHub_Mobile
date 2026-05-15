@@ -8,6 +8,7 @@ class QRCodeScreen extends StatelessWidget {
   final String qrCode;
   final String eventTitle;
   final String ticketId;
+  final String ticketNumber;
   final bool isUsed;
 
   const QRCodeScreen({
@@ -15,6 +16,7 @@ class QRCodeScreen extends StatelessWidget {
     required this.qrCode,
     required this.eventTitle,
     required this.ticketId,
+    required this.ticketNumber,
     this.isUsed = false,
   });
 
@@ -164,7 +166,7 @@ class QRCodeScreen extends StatelessWidget {
                           const SizedBox(height: 16),
                           // Ticket ID
                           Text(
-                            '${language.translate('ticket_label')} #$ticketId',
+                            '${language.translate('ticket_label')} #$ticketNumber',
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 14,
