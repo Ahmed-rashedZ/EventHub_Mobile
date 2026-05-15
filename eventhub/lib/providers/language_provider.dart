@@ -175,6 +175,14 @@ class LanguageProvider with ChangeNotifier {
     'new_password_optional': 'New Password (optional)',
     'pass_hint': 'Leave empty to keep current',
     'profile_updated': 'Profile updated successfully!',
+    'rate_event': 'Rate Event',
+    'select_star_rating': 'Please select a star rating first.',
+    'rating_success': 'Rating submitted successfully!',
+    'based_on': 'Based on',
+    'no_reviews_msg': 'No reviews yet for this event.',
+    'rating_locked_msg': 'You must attend and scan your ticket to leave a review.',
+    'share_event': 'Share Event',
+    'share_msg': 'Check out this event on EventHub!',
   };
 
   static const Map<String, String> _arabicStrings = {
@@ -312,5 +320,13 @@ class LanguageProvider with ChangeNotifier {
     'new_password_optional': 'كلمة مرور جديدة (اختياري)',
     'pass_hint': 'اتركه فارغاً للاحتفاظ بالحالية',
     'profile_updated': 'تم تحديث الملف الشخصي بنجاح!',
+    'rate_event': 'تقييم الفعالية',
+    'select_star_rating': 'يرجى اختيار عدد النجوم أولاً.',
+    'rating_success': 'تم إرسال التقييم والمراجعة بنجاح!',
+    'based_on': 'بناءً على',
+    'no_reviews_msg': 'لا توجد مراجعات لهذه الفعالية بعد.',
+    'rating_locked_msg': 'يجب حضور الفعالية ومسح التذكرة لتتمكن من التقييم والتعليق.',
+    'share_event': 'مشاركة الفعالية',
+    'share_msg': 'شاهد هذه الفعالية على EventHub!',
   };
 }

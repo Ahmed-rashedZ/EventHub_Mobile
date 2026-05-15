@@ -10,6 +10,7 @@ class AuthProvider extends ChangeNotifier {
   bool _isAuthenticated = false;
   bool _isLoading = true;
   Map<String, dynamic>? _user;
+  int? _pendingEventId; // Event to navigate to after login
 
   bool get isAuthenticated => _isAuthenticated;
   bool get isLoading => _isLoading;
@@ -18,6 +19,12 @@ class AuthProvider extends ChangeNotifier {
   String get userName => _user?['name'] ?? 'User';
   String get userEmail => _user?['email'] ?? '';
   int get userId => _user?['id'] ?? 0;
+  int? get pendingEventId => _pendingEventId;
+
+  set pendingEventId(int? id) {
+    _pendingEventId = id;
+    notifyListeners();
+  }
 
   AuthProvider() {
     checkAuth();

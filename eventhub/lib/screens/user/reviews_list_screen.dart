@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../../providers/event_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../utils/constants.dart';
 
 class ReviewsListScreen extends StatefulWidget {
@@ -47,26 +48,28 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final language = Provider.of<LanguageProvider>(context);
+    
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       appBar: AppBar(
         backgroundColor: AppColors.bgCard,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text('Reviews', style: TextStyle(color: Colors.white)),
+        title: Text(language.translate('reviews'), style: const TextStyle(color: Colors.white)),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
           : _reviews.isEmpty
-              ? const Center(
+              ? Center(
                   child: Text(
-                    'No reviews yet for this event.',
-                    style: TextStyle(color: AppColors.textMuted),
+                    language.translate('no_reviews_msg'),
+                    style: const TextStyle(color: AppColors.textMuted),
                   ),
                 )
               : Column(
                   children: [
-                    _buildSummaryCard(),
+                    _buildSummaryCard(language),
                     Expanded(
                       child: ListView.builder(
                         padding: const EdgeInsets.all(16),
@@ -82,7 +85,7 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
     );
   }
 
-  Widget _buildSummaryCard() {
+  Widget _buildSummaryCard(LanguageProvider language) {
     return Container(
       width: double.infinity,
       color: AppColors.bgCard,
@@ -110,7 +113,7 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Based on ${_reviews.length} reviews',
+            '${language.translate('based_on')} ${_reviews.length} ${language.translate('reviews')}',
             style: const TextStyle(color: AppColors.textMuted),
           ),
         ],

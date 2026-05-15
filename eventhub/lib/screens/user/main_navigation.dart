@@ -8,6 +8,9 @@ import 'notifications_screen.dart';
 import '../../utils/constants.dart';
 import '../../providers/ticket_provider.dart';
 import '../../providers/notification_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/event_provider.dart';
+import 'event_details_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -18,6 +21,34 @@ class MainNavigation extends StatefulWidget {
 
 class MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkDeepLink();
+    });
+  }
+
+  void _checkDeepLink() async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    if (auth.pendingEventId != null) {
+      final eventId = auth.pendingEventId!;
+      auth.pendingEventId = null; // Clear it immediately
+
+      final eventProvider = Provider.of<EventProvider>(context, listen: false);
+      final event = await eventProvider.fetchEventDetail(eventId);
+      
+      if (event != null && mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => EventDetailsScreen(event: event),
+          ),
+        );
+      }
+    }
+  }
 
   void setIndex(int index) {
     setState(() {

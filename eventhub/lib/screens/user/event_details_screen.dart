@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../providers/ticket_provider.dart';
 import '../../providers/event_provider.dart';
@@ -32,7 +33,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   double _avgRating = 0;
   int _totalReviews = 0;
   bool _loadingReviews = false;
-  bool _hasTicket = false;
+  bool _hasTicket = false; // This will now represent 'Is Attended'
+  bool _isBooked = false; // This will represent 'Has Booked'
 
   @override
   void initState() {
@@ -62,7 +64,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
   void _checkTicket() async {
     final provider = Provider.of<TicketProvider>(context, listen: false);
-    // If tickets list is empty, fetch it first (happens on app restart)
     if (provider.myTickets.isEmpty) {
       await provider.fetchMyTickets();
     }
@@ -70,7 +71,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final eventId = widget.event['id'];
     if (mounted) {
       setState(() {
-        _hasTicket = tickets.any((t) => t['event']?['id'].toString() == eventId.toString());
+        _isBooked = tickets.any((t) => t['event']?['id'].toString() == eventId.toString());
+        _hasTicket = tickets.any((t) {
+          final isSameEvent = t['event']?['id'].toString() == eventId.toString();
+          final status = t['status']?.toString().toLowerCase();
+          return isSameEvent && status == 'used';
+        });
       });
     }
   }
@@ -139,7 +145,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     setState(() => _isBooking = false);
 
     if (error == null) {
-      setState(() => _hasTicket = true);
+      setState(() {
+        _isBooked = true;
+      });
       _refreshEventData(); // Refresh to update booked count
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -215,7 +223,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final language = Provider.of<LanguageProvider>(context);
     final e = widget.event;
     final dateStr = e['start_time'];
-    final DateTime dt = dateStr != null ? DateTime.parse(dateStr) : DateTime.now();
+    final DateTime dt = dateStr != null ? DateTime.parse(dateStr).toLocal() : DateTime.now();
     final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     final formattedDate = '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
     final formattedTime = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
@@ -223,7 +231,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final venueLocation = e['venue']?['location'] ?? e['external_venue_location'] ?? '';
     final sponsors = (e['sponsors'] as List<dynamic>?) ?? [];
     final isStarted = dt.isBefore(DateTime.now());
-    final canRate = _hasTicket && isStarted;
+    final canRate = _hasTicket; // _hasTicket now means 'Used/Attended'
 
     final totalCapacity = e['capacity'] ?? 0;
     final bookedTickets = e['tickets_count'] ?? 0;
@@ -250,6 +258,25 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 child: const Icon(Icons.arrow_back, color: Colors.white),
               ),
             ),
+            actions: [
+              GestureDetector(
+                onTap: () {
+                  final shareMsg = language.translate('share_msg');
+                  Share.share('$shareMsg\nhttps://eventhub.com/event/${e['id']}');
+                },
+                child: Container(
+                  margin: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                  ),
+                  child: const Icon(Icons.share_outlined, color: Colors.white, size: 20),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(
@@ -458,6 +485,30 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       colors: const [AppColors.warning, Color(0xFFD97706)],
                       isLoading: false,
                     ),
+                  ] else if (_hasTicket && !isStarted) ...[
+                    const SizedBox(height: 24),
+                    _sectionTitle(language.translate('rate_review'), Icons.star_outline_rounded),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.bgCard,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.lock_clock_outlined, color: AppColors.warning, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              language.translate('rating_locked_msg'),
+                              style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                   // Reviews section
                   if (_reviews.isNotEmpty) ...[
@@ -504,11 +555,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               GradientButton(
-                text: _hasTicket ? '${language.translate('already_booked')} ✓' : language.translate('book_now'),
+                text: _isBooked ? '${language.translate('already_booked')} ✓' : language.translate('book_now'),
                 isLoading: _isBooking,
-                onPressed: _hasTicket ? () {} : _book,
-                icon: _hasTicket ? Icons.check_circle : Icons.confirmation_number_outlined,
-                colors: _hasTicket
+                onPressed: _isBooked ? () {} : _book,
+                icon: _isBooked ? Icons.check_circle : Icons.confirmation_number_outlined,
+                colors: _isBooked
                     ? [AppColors.textMuted.withValues(alpha: 0.3), AppColors.textMuted.withValues(alpha: 0.3)]
                     : [AppColors.success, const Color(0xFF16A34A)],
               ),

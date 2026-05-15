@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/event_provider.dart';
+import '../providers/language_provider.dart';
 import '../utils/constants.dart';
 import 'gradient_button.dart';
 
@@ -23,12 +24,15 @@ class _RateEventBottomSheetState extends State<RateEventBottomSheet> {
   int _selectedRating = 0;
   final _reviewCtrl = TextEditingController();
   bool _isLoading = false;
+  String? _statusMessage;
+  bool _isSuccess = false;
 
   void _submitRating() async {
+    final language = Provider.of<LanguageProvider>(context, listen: false);
     if (_selectedRating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a star rating first.'),
+        SnackBar(
+          content: Text(language.translate('select_star_rating')),
           backgroundColor: AppColors.warning,
         ),
       );
@@ -48,20 +52,19 @@ class _RateEventBottomSheetState extends State<RateEventBottomSheet> {
     setState(() => _isLoading = false);
 
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error),
-          backgroundColor: AppColors.danger,
-        ),
-      );
+      setState(() {
+        _statusMessage = error;
+        _isSuccess = false;
+      });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Rating submitted successfully!'),
-          backgroundColor: AppColors.success,
-        ),
-      );
-      Navigator.pop(context, true); // true indicates success
+      setState(() {
+        _statusMessage = language.translate('rating_success');
+        _isSuccess = true;
+      });
+      // Give user time to see success message
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) Navigator.pop(context, true);
+      });
     }
   }
 
@@ -73,6 +76,8 @@ class _RateEventBottomSheetState extends State<RateEventBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final language = Provider.of<LanguageProvider>(context);
+    
     return Container(
       padding: EdgeInsets.only(
         left: 24,
@@ -99,9 +104,9 @@ class _RateEventBottomSheetState extends State<RateEventBottomSheet> {
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
-            'Rate Event',
-            style: TextStyle(
+          Text(
+            language.translate('rate_event'),
+            style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
               color: Colors.white,
@@ -143,7 +148,7 @@ class _RateEventBottomSheetState extends State<RateEventBottomSheet> {
             style: const TextStyle(color: Colors.white),
             maxLines: 3,
             decoration: InputDecoration(
-              hintText: 'Write your review (optional)...',
+              hintText: language.translate('write_review'),
               hintStyle: TextStyle(color: AppColors.textMuted.withValues(alpha: 0.5)),
               filled: true,
               fillColor: AppColors.bgCard,
@@ -153,9 +158,41 @@ class _RateEventBottomSheetState extends State<RateEventBottomSheet> {
               ),
             ),
           ),
+          if (_statusMessage != null) ...[
+            const SizedBox(height: 16),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: (_isSuccess ? AppColors.success : AppColors.danger).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: (_isSuccess ? AppColors.success : AppColors.danger).withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _isSuccess ? Icons.check_circle_outline : Icons.error_outline,
+                    color: _isSuccess ? AppColors.success : AppColors.danger,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _statusMessage!,
+                      style: TextStyle(
+                        color: _isSuccess ? AppColors.success : AppColors.danger,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
           GradientButton(
-            text: 'Submit Rating',
+            text: language.translate('submit_rating'),
             isLoading: _isLoading,
             onPressed: _submitRating,
             icon: Icons.send,
