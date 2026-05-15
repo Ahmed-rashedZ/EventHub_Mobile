@@ -794,10 +794,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       }
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
+    return GestureDetector(
+      onLongPress: () => _showReviewOptions(review),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
         color: AppColors.bgCard,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
@@ -824,7 +826,129 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           Text(text, style: const TextStyle(fontSize: 13, color: AppColors.textPrimary, height: 1.5)),
         ],
       ]),
+      ),
     );
+  }
+
+  void _showReviewOptions(dynamic review) {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final language = Provider.of<LanguageProvider>(context, listen: false);
+    
+    // Only allow edit/delete if it's the current user's review
+    if (auth.user?['id'] != review['user_id']) return;
+
+    final date = review['created_at'];
+    String fullDateStr = '';
+    if (date != null) {
+      final dt = DateTime.tryParse(date);
+      if (dt != null) {
+        fullDateStr = DateFormat('yyyy-MM-dd HH:mm').format(dt.toLocal());
+      }
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.bgDark,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade600, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 20),
+            if (fullDateStr.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.access_time, size: 18, color: AppColors.textMuted),
+                    const SizedBox(width: 8),
+                    Text(fullDateStr, style: const TextStyle(color: AppColors.textMuted)),
+                  ],
+                ),
+              ),
+            ListTile(
+              leading: const Icon(Icons.edit, color: Colors.white),
+              title: Text(language.translate('edit'), style: const TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _editReview(review);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: AppColors.danger),
+              title: Text(language.translate('delete'), style: const TextStyle(color: AppColors.danger)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _deleteReview(review);
+              },
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _editReview(dynamic review) async {
+    final result = await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => RateEventBottomSheet(
+        eventId: widget.event['id'],
+        eventTitle: widget.event['title'] ?? 'Event',
+        initialRating: review['rating'] ?? 0,
+        initialReview: review['review_text'] ?? '',
+      ),
+    );
+    if (result == true) {
+      _loadReviews();
+      _refreshEventData();
+    }
+  }
+
+  void _deleteReview(dynamic review) async {
+    final language = Provider.of<LanguageProvider>(context, listen: false);
+    
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgCard,
+        title: Text(language.translate('delete'), style: const TextStyle(color: Colors.white)),
+        content: Text(language.translate('confirm_delete_msg') ?? 'Are you sure you want to delete your review?', style: const TextStyle(color: AppColors.textMuted)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(language.translate('cancel'), style: const TextStyle(color: AppColors.textMuted)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(language.translate('delete'), style: const TextStyle(color: AppColors.danger)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    final provider = Provider.of<EventProvider>(context, listen: false);
+    final error = await provider.deleteReview(widget.event['id']);
+    
+    if (!mounted) return;
+
+    if (error == null) {
+      _loadReviews();
+      _refreshEventData();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Review deleted successfully'), backgroundColor: AppColors.success),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error), backgroundColor: AppColors.danger),
+      );
+    }
   }
 
   Widget _buildAgenda(dynamic agenda) {

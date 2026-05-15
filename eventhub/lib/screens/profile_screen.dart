@@ -191,7 +191,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: Stack(
                             children: [
                               const Icon(
-                                Icons.bolt_rounded,
+                                Icons.notifications_rounded,
                                 color: AppColors.accent2,
                                 size: 28,
                               ),
@@ -322,39 +322,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
-              const Text(
-                'Tech Enthusiast & Attendee',
-                style: TextStyle(fontSize: 14, color: AppColors.textMuted),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.accent2.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.accent2.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.verified, size: 14, color: AppColors.accent2),
-                    const SizedBox(width: 4),
-                    Text(
-                      language.translate('verified'),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.accent2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+
               const SizedBox(height: 32),
 
               // ── Statistics ──

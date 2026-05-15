@@ -9,11 +9,15 @@ import 'gradient_button.dart';
 class RateEventBottomSheet extends StatefulWidget {
   final int eventId;
   final String eventTitle;
+  final int initialRating;
+  final String? initialReview;
 
   const RateEventBottomSheet({
     super.key,
     required this.eventId,
     required this.eventTitle,
+    this.initialRating = 0,
+    this.initialReview,
   });
 
   @override
@@ -21,9 +25,16 @@ class RateEventBottomSheet extends StatefulWidget {
 }
 
 class _RateEventBottomSheetState extends State<RateEventBottomSheet> {
-  int _selectedRating = 0;
-  final _reviewCtrl = TextEditingController();
+  late int _selectedRating;
+  late final TextEditingController _reviewCtrl;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedRating = widget.initialRating;
+    _reviewCtrl = TextEditingController(text: widget.initialReview);
+  }
   String? _statusMessage;
   bool _isSuccess = false;
 

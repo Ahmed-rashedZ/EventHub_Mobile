@@ -265,7 +265,7 @@ class LanguageProvider with ChangeNotifier {
     'view_tickets': 'عرض التذاكر',
     'no_upcoming_events': 'لا توجد فعاليات قادمة',
     'no_live_events': 'لا توجد فعاليات مباشرة حالياً',
-    'venue': 'المكان',
+    'venue': 'القاعة',
     'date': 'التاريخ',
     'time': 'الوقت',
     'tickets': 'التذاكر',

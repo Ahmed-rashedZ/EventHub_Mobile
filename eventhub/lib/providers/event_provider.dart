@@ -82,4 +82,19 @@ class EventProvider extends ChangeNotifier {
     } catch (_) {}
     return null;
   }
+
+  /// DELETE /api/events/{id}/rate — delete user's rating
+  Future<String?> deleteReview(int eventId) async {
+    try {
+      final res = await _api.delete('/events/$eventId/rate');
+      final data = jsonDecode(res.body);
+      if (res.statusCode == 200) {
+        return null;
+      } else {
+        return data['message'] ?? 'Failed to delete review';
+      }
+    } catch (e) {
+      return 'Connection error: $e';
+    }
+  }
 }
