@@ -231,7 +231,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final venueLocation = e['venue']?['location'] ?? e['external_venue_location'] ?? '';
     final sponsors = (e['sponsors'] as List<dynamic>?) ?? [];
     final isStarted = dt.isBefore(DateTime.now());
-    final canRate = _hasTicket; // _hasTicket now means 'Used/Attended'
+    final canRate = _hasTicket && isStarted; // Must have attended AND event must be started/passed
 
     final totalCapacity = e['capacity'] ?? 0;
     final bookedTickets = e['tickets_count'] ?? 0;
