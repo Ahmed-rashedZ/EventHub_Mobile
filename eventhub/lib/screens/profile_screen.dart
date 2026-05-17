@@ -31,6 +31,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final userInterests = auth.user?['interests'] as List<dynamic>? ?? [];
+      setState(() {
+        _selectedInterests = userInterests.map((e) => e.toString()).toList();
+      });
+    });
     _fetchNotifications();
     _fetchCategories();
   }
@@ -1086,6 +1093,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // ─── Interests Dialog ──────────────────────
+  Future<void> _updateInterests() async {
+    if (!mounted) return;
+    try {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final api = ApiService();
+      final body = {
+        'name': auth.userName ?? '',
+        'email': auth.userEmail ?? '',
+        'interests': _selectedInterests,
+      };
+      final res = await api.put('/profile', body);
+      if (res.statusCode == 200) {
+        await auth.refreshUser();
+      } else {
+        debugPrint('Error updating interests: ${res.statusCode} ${res.body}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to save interests: ${res.statusCode}')),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error updating interests exception: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Network error: $e')),
+        );
+      }
+    }
+  }
+
   void _showInterestsDialog() {
     final language = Provider.of<LanguageProvider>(context, listen: false);
     showDialog(
@@ -1148,7 +1186,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx),
+              onPressed: () {
+                Navigator.pop(ctx);
+              },
               child: Text(
                 language.translate('done'),
                 style: const TextStyle(
@@ -1160,7 +1200,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-    );
+    ).then((_) {
+      _updateInterests();
+    });
   }
 
   // ─── Logout Dialog ──────────────────────
