@@ -38,6 +38,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _selectedInterests = userInterests.map((e) => e.toString()).toList();
       });
+      auth.refreshUser();
     });
     _fetchNotifications();
     _fetchCategories();
@@ -440,7 +441,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           _buildStatCard(
                             icon: Icons.qr_code_scanner_rounded,
                             label: 'Tickets Scanned',
-                            value: '—',
+                            value: user?['attendance_logs_count']?.toString() ?? '0',
                             color: AppColors.success,
                           ),
                         ],
