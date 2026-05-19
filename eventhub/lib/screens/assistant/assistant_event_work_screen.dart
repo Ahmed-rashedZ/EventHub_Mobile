@@ -221,10 +221,7 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
 
     String timeStr = '';
     if (scannedAt != null) {
-      final dt = DateTime.tryParse(scannedAt);
-      if (dt != null) {
-        timeStr = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-      }
+      timeStr = formatTo12Hour(scannedAt);
     }
 
     return Container(

@@ -156,7 +156,7 @@ class _AssistantHistoryScreenState extends State<AssistantHistoryScreen> {
     final imageUrl = ApiConstants.buildImageUrl(event['image']);
 
     final startStr = event['start_time'];
-    final date = startStr != null ? DateTime.tryParse(startStr) : null;
+    final date = parseApiDateTime(startStr);
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     final dateStr = date != null ? '${months[date.month - 1]} ${date.day}, ${date.year}' : 'TBA';
 

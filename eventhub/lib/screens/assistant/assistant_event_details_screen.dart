@@ -57,10 +57,10 @@ class _AssistantEventDetailsScreenState extends State<AssistantEventDetailsScree
 
     final venueName = event['venue']?['name'] ?? 'TBA';
     final startStr = event['start_time'];
-    final date = startStr != null ? DateTime.tryParse(startStr.toString()) : null;
+    final date = parseApiDateTime(startStr?.toString());
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     final dateStr = date != null ? '${months[date.month - 1]} ${date.day}, ${date.year}' : 'TBA';
-    final timeStr = date != null ? '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}' : '';
+    final timeStr = formatTo12Hour(date);
 
     final imageUrl = ApiConstants.buildImageUrl(event['image']);
 
@@ -284,10 +284,7 @@ class _AssistantEventDetailsScreenState extends State<AssistantEventDetailsScree
 
     String timeStr = '';
     if (scannedAt != null) {
-      final dt = DateTime.tryParse(scannedAt);
-      if (dt != null) {
-        timeStr = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-      }
+      timeStr = formatTo12Hour(scannedAt);
     }
 
     return Container(

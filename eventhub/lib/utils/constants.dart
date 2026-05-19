@@ -68,3 +68,36 @@ class ApiConstants {
     return '$base$cleanPath';
   }
 }
+
+// ── Timezone & 12-Hour Format Helpers ──
+DateTime? parseApiDateTime(String? dateStr) {
+  if (dateStr == null || dateStr.isEmpty) return null;
+  DateTime? parsed = DateTime.tryParse(dateStr);
+  if (parsed != null && !dateStr.contains('+') && !dateStr.contains('Z') && !parsed.isUtc) {
+    parsed = DateTime.tryParse(dateStr.contains('T') ? '${dateStr}Z' : '${dateStr.replaceAll(' ', 'T')}Z');
+  }
+  return parsed?.toLocal();
+}
+
+String formatTo12Hour(dynamic dateTimeInput) {
+  if (dateTimeInput == null) return '';
+  DateTime? dt;
+  if (dateTimeInput is DateTime) {
+    dt = dateTimeInput;
+  } else if (dateTimeInput is String) {
+    dt = parseApiDateTime(dateTimeInput);
+  }
+  if (dt == null) return '';
+  
+  // Format to 12-hour: e.g. 7:05 PM
+  int hour = dt.hour;
+  String period = 'AM';
+  if (hour >= 12) {
+    period = 'PM';
+    if (hour > 12) hour -= 12;
+  }
+  if (hour == 0) hour = 12;
+  
+  final minuteStr = dt.minute.toString().padLeft(2, '0');
+  return '$hour:$minuteStr $period';
+}
