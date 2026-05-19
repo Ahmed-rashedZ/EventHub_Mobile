@@ -96,9 +96,13 @@ class TicketProvider extends ChangeNotifier {
 
   /// POST /api/checkin — Assistant scans QR code
   /// Backend expects: { "qr_code": "THE_QR_STRING" }
-  Future<Map<String, dynamic>> processCheckIn(String qrCode) async {
+  Future<Map<String, dynamic>> processCheckIn(String qrCode, {int? eventId}) async {
     try {
-      final res = await _api.post('/checkin', {'qr_code': qrCode});
+      final payload = {
+        'qr_code': qrCode,
+        if (eventId != null) 'event_id': eventId,
+      };
+      final res = await _api.post('/checkin', payload);
       final data = jsonDecode(res.body);
 
       return {

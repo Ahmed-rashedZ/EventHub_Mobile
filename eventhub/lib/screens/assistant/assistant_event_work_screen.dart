@@ -47,6 +47,7 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
       context,
       MaterialPageRoute(
         builder: (_) => _QRScannerPage(
+          eventId: widget.eventId,
           eventTitle: widget.eventTitle,
           onScanComplete: () => _loadData(),
         ),
@@ -313,10 +314,11 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
 // ── Embedded QR Scanner Page ──────────────────────────────────────────────────
 
 class _QRScannerPage extends StatefulWidget {
+  final int eventId;
   final String eventTitle;
   final VoidCallback onScanComplete;
 
-  const _QRScannerPage({required this.eventTitle, required this.onScanComplete});
+  const _QRScannerPage({required this.eventId, required this.eventTitle, required this.onScanComplete});
 
   @override
   State<_QRScannerPage> createState() => _QRScannerPageState();
@@ -352,7 +354,7 @@ class _QRScannerPageState extends State<_QRScannerPage> {
     setState(() => _isProcessing = true);
 
     final ticketProvider = Provider.of<TicketProvider>(context, listen: false);
-    final result = await ticketProvider.processCheckIn(code);
+    final result = await ticketProvider.processCheckIn(code, eventId: widget.eventId);
 
     if (!mounted) return;
 
