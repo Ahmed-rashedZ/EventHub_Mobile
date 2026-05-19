@@ -43,6 +43,29 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
   }
 
   void _openScanner() {
+    final timeStatus = _data?['event']?['time_status'] ?? 'upcoming';
+    if (timeStatus != 'live') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Cannot scan: This event is currently $timeStatus. Scanning is allowed only for Live events.',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ]),
+          backgroundColor: AppColors.danger,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
+      return;
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -98,29 +121,65 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // ── Scan QR Button ──
-                    GestureDetector(
-                      onTap: _openScanner,
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 20),
-                        decoration: BoxDecoration(
-                          gradient: AppColors.accentGradient,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(color: AppColors.accent.withValues(alpha: 0.4), blurRadius: 16, offset: const Offset(0, 6)),
-                          ],
+                    (() {
+                      final timeStatus = _data?['event']?['time_status'] ?? 'upcoming';
+                      final isLive = timeStatus == 'live';
+                      return GestureDetector(
+                        onTap: _openScanner,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          decoration: BoxDecoration(
+                            gradient: isLive
+                                ? AppColors.accentGradient
+                                : LinearGradient(
+                                    colors: [
+                                      Colors.grey.shade900,
+                                      Colors.grey.shade800,
+                                    ],
+                                  ),
+                            borderRadius: BorderRadius.circular(20),
+                            border: isLive ? null : Border.all(color: Colors.white10),
+                            boxShadow: [
+                              if (isLive)
+                                BoxShadow(
+                                  color: AppColors.accent.withValues(alpha: 0.4),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
+                                ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                isLive ? Icons.qr_code_scanner_rounded : Icons.lock_outline_rounded,
+                                size: 40,
+                                color: isLive ? Colors.white : Colors.white60,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                isLive ? 'Scan QR Code' : 'Scanning Locked',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: isLive ? Colors.white : Colors.white60,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                isLive
+                                    ? 'Tap to open camera'
+                                    : 'Scanning starts when event is Live',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isLive ? Colors.white70 : Colors.white38,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        child: const Column(
-                          children: [
-                            Icon(Icons.qr_code_scanner_rounded, size: 40, color: Colors.white),
-                            SizedBox(height: 8),
-                            Text('Scan QR Code', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                            SizedBox(height: 4),
-                            Text('Tap to open camera', style: TextStyle(fontSize: 12, color: Colors.white70)),
-                          ],
-                        ),
-                      ),
-                    ),
+                      );
+                    })(),
                     const SizedBox(height: 20),
 
                     // ── Stats Cards ──
