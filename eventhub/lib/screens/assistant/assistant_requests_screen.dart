@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/assistant_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/constants.dart';
+import '../user/event_details_screen.dart';
 
 class AssistantRequestsScreen extends StatefulWidget {
   const AssistantRequestsScreen({super.key});
@@ -116,14 +117,22 @@ class _AssistantRequestsScreenState extends State<AssistantRequestsScreen> {
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 24,
-                        backgroundColor: AppColors.accent.withValues(alpha: 0.2),
-                        child: Text(
-                          auth.userName.isNotEmpty ? auth.userName[0].toUpperCase() : '?',
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.accent),
-                        ),
-                      ),
+                      (() {
+                        final user = auth.user;
+                        final logo = user?['profile']?['logo'];
+                        final imageUrl = logo != null ? ApiConstants.buildImageUrl(logo) : null;
+                        return CircleAvatar(
+                          radius: 24,
+                          backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
+                          backgroundColor: AppColors.accent.withValues(alpha: 0.2),
+                          child: imageUrl == null
+                              ? Text(
+                                  auth.userName.isNotEmpty ? auth.userName[0].toUpperCase() : '?',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.accent),
+                                )
+                              : null,
+                        );
+                      })(),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -229,17 +238,26 @@ class _AssistantRequestsScreenState extends State<AssistantRequestsScreen> {
     final dateStr = date != null ? '${months[date.month - 1]} ${date.day}, ${date.year}' : 'TBA';
     final timeStr = formatTo12Hour(date);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
-      ),
-      child: Column(
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => EventDetailsScreen(event: event),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: AppColors.bgCard,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 4)),
+          ],
+        ),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Event image header
@@ -376,8 +394,9 @@ class _AssistantRequestsScreenState extends State<AssistantRequestsScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _infoRow(IconData icon, String text) {
     return Row(

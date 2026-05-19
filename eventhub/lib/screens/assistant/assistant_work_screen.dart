@@ -202,6 +202,16 @@ class _AssistantWorkScreenState extends State<AssistantWorkScreen> {
                       Expanded(child: Text(venueName, style: const TextStyle(fontSize: 12, color: AppColors.textMuted), overflow: TextOverflow.ellipsis)),
                     ],
                   ),
+                  if (event['creator'] != null) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(Icons.person_outline_rounded, size: 14, color: AppColors.textMuted),
+                        const SizedBox(width: 6),
+                        Text('Manager: ${event['creator']['name'] ?? 'Unknown'}', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 12),
 
                   // Scan progress
