@@ -5,7 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../utils/constants.dart';
 import '../../widgets/gradient_button.dart';
 import '../user/main_navigation.dart';
-import '../assistant/scanner_screen.dart';
+import '../assistant/assistant_main_navigation.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 
@@ -67,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       _showError(error);
     } else {
       if (auth.role == 'Assistant') {
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const ScannerScreen()));
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const AssistantMainNavigation()));
       } else {
         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const MainNavigation()));
       }

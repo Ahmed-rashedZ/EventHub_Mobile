@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import '../providers/auth_provider.dart';
 import '../providers/ticket_provider.dart';
+import '../providers/assistant_provider.dart';
 import '../services/api_service.dart';
 import '../utils/constants.dart';
 import 'auth/login_screen.dart';
@@ -332,28 +333,135 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               const SizedBox(height: 32),
 
+              // ── Availability Toggle (Assistant only) ──
+              if (auth.role == 'Assistant') ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Consumer<AssistantProvider>(
+                    builder: (context, assistantProv, _) {
+                      return Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.bgCard,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: assistantProv.isAvailable
+                                ? AppColors.success.withValues(alpha: 0.3)
+                                : AppColors.border,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: assistantProv.isAvailable
+                                    ? AppColors.success.withValues(alpha: 0.1)
+                                    : AppColors.textMuted.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                assistantProv.isAvailable
+                                    ? Icons.visibility_rounded
+                                    : Icons.visibility_off_rounded,
+                                color: assistantProv.isAvailable
+                                    ? AppColors.success
+                                    : AppColors.textMuted,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Available for Assistance',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    assistantProv.isAvailable
+                                        ? 'Managers can find and invite you'
+                                        : 'You won\'t receive new invitations',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textMuted.withValues(alpha: 0.7),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Switch(
+                              value: assistantProv.isAvailable,
+                              onChanged: (val) async {
+                                final error = await assistantProv.toggleAvailability(val);
+                                if (error != null && context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(error),
+                                      backgroundColor: AppColors.danger,
+                                    ),
+                                  );
+                                }
+                              },
+                              activeColor: AppColors.success,
+                              inactiveThumbColor: AppColors.textMuted,
+                              inactiveTrackColor: AppColors.border,
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+
               // ── Statistics ──
               _buildSectionTitle(language.translate('statistics'), null),
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    _buildStatCard(
-                      icon: Icons.local_activity_rounded,
-                      label: language.translate('tickets_booked'),
-                      value: ticketProv.myTickets.length.toString(),
-                      color: AppColors.accent,
-                    ),
-                    const SizedBox(width: 16),
-                    _buildStatCard(
-                      icon: Icons.event_available_rounded,
-                      label: language.translate('events_attended'),
-                      value: ticketProv.totalAttended.toString(),
-                      color: AppColors.success,
-                    ),
-                  ],
-                ),
+                child: auth.role == 'Assistant'
+                    ? Row(
+                        children: [
+                          _buildStatCard(
+                            icon: Icons.event_available_rounded,
+                            label: 'Events Assisted',
+                            value: Provider.of<AssistantProvider>(context).workEvents.length.toString(),
+                            color: AppColors.accent,
+                          ),
+                          const SizedBox(width: 16),
+                          _buildStatCard(
+                            icon: Icons.qr_code_scanner_rounded,
+                            label: 'Tickets Scanned',
+                            value: '—',
+                            color: AppColors.success,
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          _buildStatCard(
+                            icon: Icons.local_activity_rounded,
+                            label: language.translate('tickets_booked'),
+                            value: ticketProv.myTickets.length.toString(),
+                            color: AppColors.accent,
+                          ),
+                          const SizedBox(width: 16),
+                          _buildStatCard(
+                            icon: Icons.event_available_rounded,
+                            label: language.translate('events_attended'),
+                            value: ticketProv.totalAttended.toString(),
+                            color: AppColors.success,
+                          ),
+                        ],
+                      ),
               ),
               const SizedBox(height: 32),
 

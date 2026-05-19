@@ -91,13 +91,13 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<String?> register(String name, String email, String password) async {
+  Future<String?> register(String name, String email, String password, {String role = 'User'}) async {
     try {
       final res = await _api.post('/register', {
         'name': name,
         'email': email,
         'password': password,
-        'role': 'User',
+        'role': role,
       });
 
       final data = jsonDecode(res.body);

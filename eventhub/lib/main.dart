@@ -11,6 +11,7 @@ import 'providers/event_provider.dart';
 import 'providers/ticket_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/language_provider.dart';
+import 'providers/assistant_provider.dart';
 import 'screens/splash_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'services/fcm_service.dart';
@@ -48,6 +49,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => TicketProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
+        ChangeNotifierProvider(create: (_) => AssistantProvider()),
       ],
       child: const EventHubApp(),
     ),

@@ -5,7 +5,7 @@ import '../providers/auth_provider.dart';
 import '../utils/constants.dart';
 import 'auth/login_screen.dart';
 import 'user/main_navigation.dart';
-import 'assistant/scanner_screen.dart';
+import 'assistant/assistant_main_navigation.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -56,7 +56,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     Widget destination;
     if (auth.isAuthenticated) {
       if (auth.role == 'Assistant') {
-        destination = const ScannerScreen();
+        destination = const AssistantMainNavigation();
       } else {
         destination = const MainNavigation();
       }

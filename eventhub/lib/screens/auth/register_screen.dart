@@ -5,6 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../utils/constants.dart';
 import '../../widgets/gradient_button.dart';
 import '../user/main_navigation.dart';
+import '../assistant/assistant_main_navigation.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -21,6 +22,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _obscurePass = true;
   bool _obscureConfirm = true;
+  String _selectedRole = 'User'; // 'User' or 'Assistant'
 
   @override
   void dispose() {
@@ -53,7 +55,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    final error = await auth.register(name, email, pass);
+    final error = await auth.register(name, email, pass, role: _selectedRole);
 
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -61,8 +63,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (error != null) {
       _showError(error);
     } else {
+      Widget destination;
+      if (_selectedRole == 'Assistant') {
+        destination = const AssistantMainNavigation();
+      } else {
+        destination = const MainNavigation();
+      }
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const MainNavigation()),
+        MaterialPageRoute(builder: (_) => destination),
         (route) => false,
       );
     }
@@ -138,7 +146,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 24),
                     const Text('Join EventHub', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
                     const Text('Create your premium account', style: TextStyle(fontSize: 14, color: AppColors.textMuted)),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 24),
+
+                    // ── Role Selection Toggle ──
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppColors.bgCard,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          _buildRoleTab('User', Icons.person_rounded, 'User'),
+                          _buildRoleTab('Assistant', Icons.qr_code_scanner_rounded, 'Assistant'),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
 
                     // Register Card
                     Container(
@@ -237,6 +262,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ) : null,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoleTab(String label, IconData icon, String role) {
+    final isSelected = _selectedRole == role;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedRole = role),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            gradient: isSelected ? AppColors.accentGradient : null,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: isSelected
+                ? [BoxShadow(color: AppColors.accent.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18, color: isSelected ? Colors.white : AppColors.textMuted),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected ? Colors.white : AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
