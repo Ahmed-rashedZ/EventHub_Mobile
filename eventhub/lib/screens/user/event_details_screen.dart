@@ -221,6 +221,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final language = Provider.of<LanguageProvider>(context);
+    final auth = Provider.of<AuthProvider>(context, listen: false);
     final e = widget.event;
     final dateStr = e['start_time'];
     final DateTime dt = dateStr != null ? DateTime.parse(dateStr).toLocal() : DateTime.now();
@@ -543,7 +544,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: !isStarted ? SafeArea(
+      bottomNavigationBar: (!isStarted && auth.role != 'Assistant') ? SafeArea(
         child: Container(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
           decoration: BoxDecoration(
