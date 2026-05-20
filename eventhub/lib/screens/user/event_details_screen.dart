@@ -231,6 +231,18 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final venueName = e['venue']?['name'] ?? e['external_venue_name'] ?? e['location'] ?? 'TBA';
     final venueLocation = e['venue']?['location'] ?? e['external_venue_location'] ?? '';
     final sponsors = (e['sponsors'] as List<dynamic>?) ?? [];
+    final exhibitors = (e['exhibitors'] as List<dynamic>?) ?? [];
+    final mappedExhibitors = exhibitors.map((ex) {
+      final company = ex['company'];
+      final profile = company?['profile'];
+      final booth = ex['booth'];
+      return {
+        'id': company?['id'],
+        'name': profile?['company_name'] ?? company?['name'] ?? 'Company',
+        'logo': profile?['logo'],
+        'booth_label': booth != null ? booth['label'] : null,
+      };
+    }).toList();
     final isStarted = dt.isBefore(DateTime.now());
     final canRate = _hasTicket && isStarted; // Must have attended AND event must be started/passed
 
@@ -448,19 +460,33 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     _buildAgenda(e['agenda']),
                   ],
                   // Sponsors section
-                  if (sponsors.isNotEmpty) ...[
-                    const SizedBox(height: 24),
-                    _sectionTitle(language.translate('event_sponsors'), Icons.handshake_outlined),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      height: 80,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: sponsors.length,
-                        itemBuilder: (_, i) => _buildSponsorCard(sponsors[i]),
+                    if (sponsors.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      _sectionTitle(language.translate('event_sponsors'), Icons.handshake_outlined),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 80,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: sponsors.length,
+                          itemBuilder: (_, i) => _buildSponsorCard(sponsors[i]),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                    // Exhibitors section
+                    if (mappedExhibitors.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      _sectionTitle(language.translate('participating_companies'), Icons.business_outlined),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 80,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: mappedExhibitors.length,
+                          itemBuilder: (_, i) => _buildExhibitorCard(mappedExhibitors[i]),
+                        ),
+                      ),
+                    ],
                   // Rating section
                   if (canRate) ...[
                     const SizedBox(height: 24),
@@ -555,6 +581,42 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (auth.role == 'Company' && e['is_exhibition'] == true) ...[
+                Builder(builder: (ctx) {
+                  final bool isOpen = e['is_exhibitor_registration_open'] == true;
+                  final DateTime? start = e['start_time'] != null ? DateTime.tryParse(e['start_time']) : null;
+                  final bool deadlinePassed = start != null && start.difference(DateTime.now()).inDays < 30;
+                  final bool canApply = isOpen && !deadlinePassed;
+
+                  return Column(
+                    children: [
+                      GradientButton(
+                        text: canApply ? language.translate('apply_for_exhibition') : language.translate('exhibition_registration_closed'),
+                        isLoading: false, // Will navigate to application screen
+                        onPressed: canApply ? () {
+                            // Navigate to exhibition application form (assuming it exists or will be handled)
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Applying for exhibition...'), backgroundColor: AppColors.accent),
+                            );
+                        } : () {},
+                        icon: Icons.business_center_outlined,
+                        colors: canApply
+                            ? [AppColors.accent2, const Color(0xFF0891B2)]
+                            : [AppColors.textMuted.withValues(alpha: 0.3), AppColors.textMuted.withValues(alpha: 0.3)],
+                      ),
+                      if (deadlinePassed && isOpen)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            language.translate('deadline_passed_msg'),
+                            style: const TextStyle(color: AppColors.warning, fontSize: 11),
+                          ),
+                        ),
+                      const SizedBox(height: 12),
+                    ],
+                  );
+                }),
+              ],
               GradientButton(
                 text: _isBooked ? '${language.translate('already_booked')} ✓' : language.translate('book_now'),
                 isLoading: _isBooking,
@@ -593,11 +655,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 Text(language.translate('capacity_bookings'), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
               ]),
               Text(
-                '$booked / $total',
+                total == 0 ? '$booked / ${language.translate('unlimited')}' : '$booked / $total',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: isFull ? AppColors.danger : AppColors.accent,
+                  color: (isFull && total > 0) ? AppColors.danger : AppColors.accent,
                 ),
               ),
             ],
@@ -616,7 +678,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            isFull ? language.translate('sold_out') : '${(progress * 100).toInt()}% ${language.translate('booked')}',
+            (isFull && total > 0) ? language.translate('sold_out') : (total == 0 ? language.translate('unlimited') : '${(progress * 100).toInt()}% ${language.translate('booked')}'),
             style: TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.w500),
           ),
         ],
@@ -711,6 +773,63 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 decoration: BoxDecoration(color: tColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
                 child: Text(tier.toString().toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: tColor)),
               ),
+            ],
+          ),
+        ]),
+      ),
+    );
+  }
+
+  Widget _buildExhibitorCard(Map<String, dynamic> exhibitor) {
+    final language = Provider.of<LanguageProvider>(context);
+    final name = exhibitor['name'];
+    final logo = exhibitor['logo'];
+    final boothLabel = exhibitor['booth_label'];
+    const accentColor = AppColors.accent2;
+
+    return GestureDetector(
+      onTap: () {
+        if (exhibitor['id'] != null) {
+          Navigator.push(context, MaterialPageRoute(
+            builder: (_) => PublicProfileScreen(userId: exhibitor['id']),
+          ));
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: [accentColor.withValues(alpha: 0.08), AppColors.bgCard]),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: accentColor.withValues(alpha: 0.25)),
+        ),
+        child: Row(children: [
+          if (logo != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.network(
+                ApiConstants.buildImageUrl(logo)!,
+                width: 42,
+                height: 42,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _avatarBox(name, accentColor),
+              ),
+            )
+          else _avatarBox(name, accentColor),
+          const SizedBox(width: 10),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              if (boothLabel != null) ...[
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(color: accentColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
+                  child: Text('${language.translate('booth')}: $boothLabel', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: accentColor)),
+                ),
+              ],
             ],
           ),
         ]),

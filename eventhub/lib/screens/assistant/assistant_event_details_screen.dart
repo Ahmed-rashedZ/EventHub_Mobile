@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../providers/assistant_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../utils/constants.dart';
+import '../user/public_profile_screen.dart';
 
 class AssistantEventDetailsScreen extends StatefulWidget {
   final int eventId;
@@ -57,6 +58,18 @@ class _AssistantEventDetailsScreenState extends State<AssistantEventDetailsScree
     final totalScanned = _data?['total_scanned'] ?? 0;
     final myScansCount = _data?['my_scans_count'] ?? 0;
     final myScans = (_data?['my_scans'] as List<dynamic>?) ?? [];
+    final exhibitors = (event['exhibitors'] as List<dynamic>?) ?? [];
+    final mappedExhibitors = exhibitors.map((ex) {
+      final company = ex['company'];
+      final profile = company?['profile'];
+      final booth = ex['booth'];
+      return {
+        'id': company?['id'],
+        'name': profile?['company_name'] ?? company?['name'] ?? 'Company',
+        'logo': profile?['logo'],
+        'booth_label': booth != null ? booth['label'] : null,
+      };
+    }).toList();
 
     final venue = event['venue'];
     final externalName = event['external_venue_name'];
@@ -207,6 +220,27 @@ class _AssistantEventDetailsScreenState extends State<AssistantEventDetailsScree
                      ],
                   ),
                   const SizedBox(height: 24),
+
+                  // ── Participating Companies ──
+                  if (mappedExhibitors.isNotEmpty) ...[
+                    Row(
+                      children: [
+                         const Icon(Icons.business_outlined, size: 20, color: AppColors.accent2),
+                         const SizedBox(width: 8),
+                         Text(language.translate('participating_companies'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.accent2)),
+                       ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 80,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: mappedExhibitors.length,
+                        itemBuilder: (_, i) => _buildExhibitorCard(mappedExhibitors[i]),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
 
                   // ── My Scans List ──
                   if (myScans.isNotEmpty) ...[
@@ -368,6 +402,71 @@ class _AssistantEventDetailsScreenState extends State<AssistantEventDetailsScree
             Text(timeStr, style: const TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.w500)),
         ],
       ),
+    );
+  }
+
+  Widget _buildExhibitorCard(Map<String, dynamic> exhibitor) {
+    final language = Provider.of<LanguageProvider>(context);
+    final name = exhibitor['name'];
+    final logo = exhibitor['logo'];
+    final boothLabel = exhibitor['booth_label'];
+    const accentColor = AppColors.accent2;
+
+    return GestureDetector(
+      onTap: () {
+        if (exhibitor['id'] != null) {
+          Navigator.push(context, MaterialPageRoute(
+            builder: (_) => PublicProfileScreen(userId: exhibitor['id']),
+          ));
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: [accentColor.withValues(alpha: 0.08), AppColors.bgCard]),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: accentColor.withValues(alpha: 0.25)),
+        ),
+        child: Row(children: [
+          if (logo != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.network(
+                ApiConstants.buildImageUrl(logo)!,
+                width: 42,
+                height: 42,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _avatarBox(name, accentColor),
+              ),
+            )
+          else _avatarBox(name, accentColor),
+          const SizedBox(width: 10),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.white)),
+              if (boothLabel != null) ...[
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(color: accentColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
+                  child: Text('${language.translate('booth')}: $boothLabel', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: accentColor)),
+                ),
+              ],
+            ],
+          ),
+        ]),
+      ),
+    );
+  }
+
+  Widget _avatarBox(String name, Color color) {
+    return Container(
+      width: 42, height: 42,
+      decoration: BoxDecoration(gradient: LinearGradient(colors: [color, color.withValues(alpha: 0.6)]), borderRadius: BorderRadius.circular(10)),
+      child: Center(child: Text(name.isNotEmpty ? name[0].toUpperCase() : 'C', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Colors.white))),
     );
   }
 }

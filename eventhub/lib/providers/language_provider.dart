@@ -298,6 +298,13 @@ class LanguageProvider with ChangeNotifier {
     'at': 'at',
     'jan': 'Jan', 'feb': 'Feb', 'mar': 'Mar', 'apr': 'Apr', 'may': 'May', 'jun': 'Jun',
     'jul': 'Jul', 'aug': 'Aug', 'sep': 'Sep', 'oct': 'Oct', 'nov': 'Nov', 'dec': 'Dec',
+    'participating_companies': 'Participating Companies',
+    'booth': 'Booth',
+    'apply_for_exhibition': 'Apply for Exhibition',
+    'exhibition_registration_closed': 'Registration Closed',
+    'deadline_passed_msg': 'Deadline passed (closed 30 days before start)',
+    'unlimited': 'Unlimited',
+    'unlimited_ar': 'مفتوح',
   };
 
   static const Map<String, String> _arabicStrings = {
@@ -556,5 +563,11 @@ class LanguageProvider with ChangeNotifier {
     'at': 'في',
     'jan': 'يناير', 'feb': 'فبراير', 'mar': 'مارس', 'apr': 'أبريل', 'may': 'مايو', 'jun': 'يونيو',
     'jul': 'يوليو', 'aug': 'أغسطس', 'sep': 'سبتمبر', 'oct': 'أكتوبر', 'nov': 'نوفمبر', 'dec': 'ديسمبر',
+    'participating_companies': 'الشركات المشاركة',
+    'booth': 'جناح',
+    'apply_for_exhibition': 'طلب مشاركة في معرض',
+    'exhibition_registration_closed': 'باب الاشتراك مغلق',
+    'deadline_passed_msg': 'انتهى الموعد النهائي (يغلق قبل الفعالية بـ 30 يوماً)',
+    'unlimited': 'مفتوح',
   };
 }
