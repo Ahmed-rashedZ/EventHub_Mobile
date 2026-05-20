@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../providers/language_provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../utils/constants.dart';
@@ -22,7 +23,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
   void _verifyCode() async {
     final code = _codeCtrl.text.trim();
     if (code.isEmpty) {
-      _showError('Please enter the verification code');
+      _showError(Provider.of<LanguageProvider>(context, listen: false).translate('please_fill_all_fields'));
       return;
     }
 
@@ -62,6 +63,8 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final language = Provider.of<LanguageProvider>(context);
+
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       appBar: AppBar(
@@ -75,23 +78,23 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(Icons.mark_email_read, size: 80, color: AppColors.accent),
+              Center(child: Image.asset('assets/images/logo.png', height: 80)),
               const SizedBox(height: 32),
-              const Text(
-                'Verify Code',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+              Text(
+                language.translate('verify_code_title'),
+                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
               Text(
-                'We sent a 6-digit code to ${widget.email}',
+                '${language.translate('verify_code_msg')} ${widget.email}',
                 style: const TextStyle(color: AppColors.textMuted, fontSize: 16),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
-              const Text(
-                'VERIFICATION CODE',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted, letterSpacing: 0.8),
+              Text(
+                language.translate('verification_code_label'),
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted, letterSpacing: 0.8),
               ),
               const SizedBox(height: 8),
               TextField(
@@ -111,7 +114,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
               ),
               const SizedBox(height: 32),
               GradientButton(
-                text: 'Verify Code',
+                text: language.translate('verify_code_title'),
                 isLoading: _isLoading,
                 onPressed: _verifyCode,
                 icon: Icons.check_circle_outline,

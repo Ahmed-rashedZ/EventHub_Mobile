@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../providers/language_provider.dart';
 
 import '../../providers/ticket_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -71,57 +72,57 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
     final eventId = auth.user?['event_id'];
 
     if (eventId == null) {
-      return Scaffold(
-        backgroundColor: AppColors.bgDark,
-        appBar: AppBar(title: const Text('Participants')),
-        body: const Center(
-          child: Text(
-            'You are not assigned to any event.',
-            style: TextStyle(color: AppColors.textMuted),
-          ),
-        ),
-      );
+       return Scaffold(
+         backgroundColor: AppColors.bgDark,
+         appBar: AppBar(title: Text(Provider.of<LanguageProvider>(context, listen: false).translate('participants'))),
+         body: Center(
+           child: Text(
+             Provider.of<LanguageProvider>(context, listen: false).translate('not_assigned_event'),
+             style: const TextStyle(color: AppColors.textMuted),
+           ),
+         ),
+       );
     }
 
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       appBar: AppBar(
         backgroundColor: AppColors.bgCard,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text('Event Participants', style: TextStyle(color: Colors.white)),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
-          : Column(
-              children: [
-                _buildStatsCard(),
-                Padding(
+         elevation: 0,
+         iconTheme: const IconThemeData(color: Colors.white),
+         title: Text(Provider.of<LanguageProvider>(context, listen: false).translate('event_participants'), style: const TextStyle(color: Colors.white)),
+       ),
+       body: _isLoading
+           ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
+           : Column(
+               children: [
+                 _buildStatsCard(context),
+                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: TextField(
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: 'Search by name or ticket code...',
-                      hintStyle: TextStyle(color: AppColors.textMuted.withValues(alpha: 0.5)),
-                      prefixIcon: const Icon(Icons.search, color: AppColors.textMuted),
-                      filled: true,
-                      fillColor: AppColors.bgCard,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
+                       hintText: Provider.of<LanguageProvider>(context, listen: false).translate('search_name_qr'),
+                       hintStyle: TextStyle(color: AppColors.textMuted.withValues(alpha: 0.5)),
+                       prefixIcon: const Icon(Icons.search, color: AppColors.textMuted),
+                       filled: true,
+                       fillColor: AppColors.bgCard,
+                       border: OutlineInputBorder(
+                         borderRadius: BorderRadius.circular(12),
+                         borderSide: BorderSide.none,
+                       ),
+                     ),
                     onChanged: _filterParticipants,
                   ),
                 ),
                 Expanded(
                   child: _filteredParticipants.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'No participants found.',
-                            style: TextStyle(color: AppColors.textMuted),
-                          ),
-                        )
+                       ? Center(
+                           child: Text(
+                             Provider.of<LanguageProvider>(context, listen: false).translate('no_participants_found'),
+                             style: const TextStyle(color: AppColors.textMuted),
+                           ),
+                         )
                       : ListView.builder(
                           padding: const EdgeInsets.all(16),
                           itemCount: _filteredParticipants.length,
@@ -136,7 +137,8 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
     );
   }
 
-  Widget _buildStatsCard() {
+   Widget _buildStatsCard(BuildContext context) {
+    final language = Provider.of<LanguageProvider>(context, listen: false);
     return Container(
       width: double.infinity,
       color: AppColors.bgCard,
@@ -144,9 +146,9 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatItem('Total', _totalCount, AppColors.accent),
-          _buildStatItem('Attended', _attendedCount, AppColors.success),
-          _buildStatItem('Pending', _totalCount - _attendedCount, AppColors.warning),
+          _buildStatItem(language.translate('total'), _totalCount, AppColors.accent),
+          _buildStatItem(language.translate('attended'), _attendedCount, AppColors.success),
+          _buildStatItem(language.translate('pending'), _totalCount - _attendedCount, AppColors.warning),
         ],
       ),
     );
@@ -215,11 +217,11 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
                   style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  'Code: $qrCode',
-                  style: const TextStyle(color: AppColors.accent2, fontSize: 12),
-                ),
-              ],
+                 Text(
+                   '${Provider.of<LanguageProvider>(context, listen: false).translate('code_label')} $qrCode',
+                   style: const TextStyle(color: AppColors.accent2, fontSize: 12),
+                 ),
+               ],
             ),
           ),
           Container(
@@ -228,14 +230,14 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
               color: isUsed ? AppColors.success.withValues(alpha: 0.2) : AppColors.warning.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(
-              isUsed ? 'Attended' : 'Pending',
-              style: TextStyle(
-                color: isUsed ? AppColors.success : AppColors.warning,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
+             child: Text(
+               isUsed ? Provider.of<LanguageProvider>(context, listen: false).translate('attended') : Provider.of<LanguageProvider>(context, listen: false).translate('pending'),
+               style: TextStyle(
+                 color: isUsed ? AppColors.success : AppColors.warning,
+                 fontWeight: FontWeight.bold,
+                 fontSize: 12,
+               ),
+             ),
           ),
         ],
       ),

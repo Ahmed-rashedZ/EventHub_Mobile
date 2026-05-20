@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../providers/assistant_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../utils/constants.dart';
 
 class AssistantEventDetailsScreen extends StatefulWidget {
@@ -41,6 +43,7 @@ class _AssistantEventDetailsScreenState extends State<AssistantEventDetailsScree
 
   @override
   Widget build(BuildContext context) {
+    final language = Provider.of<LanguageProvider>(context);
     if (_isLoading) {
       return Scaffold(
         backgroundColor: AppColors.bgDark,
@@ -55,11 +58,23 @@ class _AssistantEventDetailsScreenState extends State<AssistantEventDetailsScree
     final myScansCount = _data?['my_scans_count'] ?? 0;
     final myScans = (_data?['my_scans'] as List<dynamic>?) ?? [];
 
-    final venueName = event['venue']?['name'] ?? 'TBA';
+    final venue = event['venue'];
+    final externalName = event['external_venue_name'];
+    final externalLoc = event['external_venue_location'];
+
+    String venueName = language.translate('tba');
+    if (venue != null) {
+      venueName = venue['name'] ?? language.translate('tba');
+    } else if (externalName != null && externalName.toString().isNotEmpty) {
+      venueName = externalName.toString();
+      if (externalLoc != null && externalLoc.toString().isNotEmpty) {
+        venueName += " ($externalLoc)";
+      }
+    }
     final startStr = event['start_time'];
     final date = parseApiDateTime(startStr?.toString());
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    final dateStr = date != null ? '${months[date.month - 1]} ${date.day}, ${date.year}' : 'TBA';
+    final dateStr = date != null ? '${months[date.month - 1]} ${date.day}, ${date.year}' : language.translate('tba');
     final timeStr = formatTo12Hour(date);
 
     final imageUrl = ApiConstants.buildImageUrl(event['image']);
@@ -128,9 +143,9 @@ class _AssistantEventDetailsScreenState extends State<AssistantEventDetailsScree
                             decoration: BoxDecoration(
                               color: AppColors.textMuted.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text('COMPLETED', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textMuted, letterSpacing: 1)),
-                          ),
+                             ),
+                             child: Text(language.translate('completed_upper'), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textMuted, letterSpacing: 1)),
+                           ),
                           const SizedBox(height: 8),
                           Text(
                             widget.eventTitle,
@@ -153,30 +168,43 @@ class _AssistantEventDetailsScreenState extends State<AssistantEventDetailsScree
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Event Info
-                  _buildInfoCard(Icons.calendar_today, 'Date & Time', '$dateStr at $timeStr'),
-                  const SizedBox(height: 10),
-                  _buildInfoCard(Icons.location_on_outlined, 'Venue', venueName),
-                  const SizedBox(height: 24),
+                  _buildInfoCard(Icons.calendar_today, language.translate('date_time_label'), '$dateStr ${language.translate('at')} $timeStr'),
+                   const SizedBox(height: 10),
+                   _buildInfoCard(
+                     Icons.location_on_outlined,
+                     language.translate('venue_label'),
+                     venueName,
+                     trailing: (venue == null && externalLoc != null && externalLoc.toString().isNotEmpty)
+                       ? GestureDetector(
+                           onTap: () => _launchVenueUrl(externalLoc.toString()),
+                           child: Text(
+                             language.translate('open_in_maps'),
+                             style: const TextStyle(color: AppColors.accent, fontSize: 13, fontWeight: FontWeight.w600, decoration: TextDecoration.underline),
+                           ),
+                         )
+                       : null,
+                   ),
+                   const SizedBox(height: 24),
 
                   // ── Statistics Section ──
                   Row(
                     children: [
-                      const Icon(Icons.analytics_outlined, size: 20, color: AppColors.accent2),
-                      const SizedBox(width: 8),
-                      const Text('Your Statistics', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.accent2)),
-                    ],
+                       const Icon(Icons.analytics_outlined, size: 20, color: AppColors.accent2),
+                       const SizedBox(width: 8),
+                       Text(language.translate('my_stats'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.accent2)),
+                     ],
                   ),
                   const SizedBox(height: 16),
 
                   // Stats cards
                   Row(
                     children: [
-                      _statCard('Total Booked', totalBooked.toString(), Icons.confirmation_number_outlined, AppColors.accent),
-                      const SizedBox(width: 12),
-                      _statCard('Total Scanned', totalScanned.toString(), Icons.check_circle_outline, AppColors.success),
-                      const SizedBox(width: 12),
-                      _statCard('My Scans', myScansCount.toString(), Icons.qr_code_scanner_rounded, AppColors.accent2),
-                    ],
+                       _statCard(language.translate('total_booked'), totalBooked.toString(), Icons.confirmation_number_outlined, AppColors.accent),
+                       const SizedBox(width: 12),
+                       _statCard(language.translate('total_scanned'), totalScanned.toString(), Icons.check_circle_outline, AppColors.success),
+                       const SizedBox(width: 12),
+                       _statCard(language.translate('my_scans'), myScansCount.toString(), Icons.qr_code_scanner_rounded, AppColors.accent2),
+                     ],
                   ),
                   const SizedBox(height: 24),
 
@@ -186,12 +214,12 @@ class _AssistantEventDetailsScreenState extends State<AssistantEventDetailsScree
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Row(children: [
-                          const Icon(Icons.list_alt_rounded, size: 20, color: AppColors.accent2),
-                          const SizedBox(width: 8),
-                          const Text('Tickets I Scanned', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.accent2)),
-                        ]),
-                        Text('${myScans.length} total', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
-                      ],
+                           const Icon(Icons.list_alt_rounded, size: 20, color: AppColors.accent2),
+                           const SizedBox(width: 8),
+                           Text(language.translate('tickets_i_scanned'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.accent2)),
+                         ]),
+                         Text('${myScans.length} ${language.translate('total')}', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                       ],
                     ),
                     const SizedBox(height: 12),
                     ...myScans.map((scan) => _buildScanItem(scan)),
@@ -203,13 +231,13 @@ class _AssistantEventDetailsScreenState extends State<AssistantEventDetailsScree
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppColors.border),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Column(
                           children: [
-                            Icon(Icons.info_outline, size: 32, color: AppColors.textMuted),
-                            SizedBox(height: 8),
-                            Text('No scans recorded', style: TextStyle(color: AppColors.textMuted)),
-                          ],
+                             const Icon(Icons.info_outline, size: 32, color: AppColors.textMuted),
+                             const SizedBox(height: 8),
+                             Text(language.translate('no_scans_recorded'), style: const TextStyle(color: AppColors.textMuted)),
+                           ],
                         ),
                       ),
                     ),
@@ -225,7 +253,18 @@ class _AssistantEventDetailsScreenState extends State<AssistantEventDetailsScree
     );
   }
 
-  Widget _buildInfoCard(IconData icon, String label, String value) {
+  Future<void> _launchVenueUrl(String url) async {
+    try {
+      final uri = Uri.parse(url.startsWith('http') ? url : 'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(url)}');
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      debugPrint("Error launching URL: $e");
+    }
+  }
+
+  Widget _buildInfoCard(IconData icon, String label, String value, {Widget? trailing}) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -248,7 +287,12 @@ class _AssistantEventDetailsScreenState extends State<AssistantEventDetailsScree
           children: [
             Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted, letterSpacing: 0.5)),
             const SizedBox(height: 4),
-            Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+            Row(
+              children: [
+                Expanded(child: Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500))),
+                if (trailing != null) trailing,
+              ],
+            ),
           ],
         )),
       ]),

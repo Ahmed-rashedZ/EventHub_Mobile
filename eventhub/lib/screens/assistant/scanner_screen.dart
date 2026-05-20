@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
+import '../../providers/language_provider.dart';
 import '../../providers/ticket_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/constants.dart';
@@ -50,26 +51,26 @@ class _ScannerScreenState extends State<ScannerScreen> {
     if (success) {
       icon = Icons.check_circle;
       color = AppColors.success;
-      title = 'Entry Allowed ✅';
+      title = Provider.of<LanguageProvider>(context, listen: false).translate('entry_allowed');
     } else if (statusCode == 422) {
       // Already used
       icon = Icons.warning_amber;
       color = AppColors.warning;
-      title = 'Already Entered ⚠️';
+      title = Provider.of<LanguageProvider>(context, listen: false).translate('already_entered');
     } else if (statusCode == 404) {
       // Invalid QR
       icon = Icons.cancel;
       color = AppColors.danger;
-      title = 'Invalid Ticket ❌';
+      title = Provider.of<LanguageProvider>(context, listen: false).translate('invalid_ticket');
     } else if (statusCode == 403) {
       // Unauthorized event
       icon = Icons.block;
       color = AppColors.danger;
-      title = 'Not Your Event 🚫';
+      title = Provider.of<LanguageProvider>(context, listen: false).translate('not_your_event');
     } else {
       icon = Icons.error;
       color = AppColors.danger;
-      title = 'Error';
+      title = Provider.of<LanguageProvider>(context, listen: false).translate('error');
     }
 
     showDialog(
@@ -132,13 +133,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
               child: Text(
-                'Scan Next',
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                ),
-              ),
+                 Provider.of<LanguageProvider>(context, listen: false).translate('scan_next'),
+                 style: TextStyle(
+                   color: color,
+                   fontWeight: FontWeight.w700,
+                   fontSize: 16,
+                 ),
+               ),
             ),
           ),
         ],
@@ -194,15 +195,15 @@ class _ScannerScreenState extends State<ScannerScreen> {
                           child: const Center(child: Text('🎯', style: TextStyle(fontSize: 16))),
                         ),
                         const SizedBox(width: 8),
-                        const Text(
-                          'Scanner',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
+                         Text(
+                           Provider.of<LanguageProvider>(context, listen: false).translate('scanner'),
+                           style: const TextStyle(
+                             fontWeight: FontWeight.w700,
+                             fontSize: 16,
+                             color: Colors.white,
+                           ),
+                         ),
+                       ],
                     ),
                   ),
                   const Spacer(),
@@ -274,14 +275,14 @@ class _ScannerScreenState extends State<ScannerScreen> {
                         size: 20,
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        _isProcessing ? 'Processing...' : 'Point camera at ticket QR code',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontWeight: FontWeight.w500,
-                          fontSize: 14,
-                        ),
-                      ),
+                       Text(
+                         _isProcessing ? Provider.of<LanguageProvider>(context, listen: false).translate('processing') : Provider.of<LanguageProvider>(context, listen: false).translate('point_camera_ticket'),
+                         style: TextStyle(
+                           color: Colors.white.withValues(alpha: 0.9),
+                           fontWeight: FontWeight.w500,
+                           fontSize: 14,
+                         ),
+                       ),
                     ],
                   ),
                 ),
@@ -306,28 +307,28 @@ class _ScannerScreenState extends State<ScannerScreen> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppColors.bgCard,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Logout', style: TextStyle(fontWeight: FontWeight.w700)),
-        content: const Text('Are you sure you want to logout?', style: TextStyle(color: AppColors.textMuted)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await auth.logout();
-              if (context.mounted) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
-              }
-            },
-            child: const Text('Logout', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
-          ),
-        ],
+         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+         title: Text(Provider.of<LanguageProvider>(context, listen: false).translate('logout'), style: const TextStyle(fontWeight: FontWeight.w700)),
+         content: Text(Provider.of<LanguageProvider>(context, listen: false).translate('confirm_logout'), style: const TextStyle(color: AppColors.textMuted)),
+         actions: [
+           TextButton(
+             onPressed: () => Navigator.pop(context),
+             child: Text(Provider.of<LanguageProvider>(context, listen: false).translate('cancel'), style: const TextStyle(color: AppColors.textMuted)),
+           ),
+           TextButton(
+             onPressed: () async {
+               Navigator.pop(context);
+               await auth.logout();
+               if (context.mounted) {
+                 Navigator.of(context).pushAndRemoveUntil(
+                   MaterialPageRoute(builder: (_) => const LoginScreen()),
+                   (route) => false,
+                 );
+               }
+             },
+             child: Text(Provider.of<LanguageProvider>(context, listen: false).translate('logout'), style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
+           ),
+         ],
       ),
     );
   }

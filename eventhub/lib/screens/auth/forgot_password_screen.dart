@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../providers/language_provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../utils/constants.dart';
@@ -33,7 +34,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   void _sendCode() async {
     final email = _emailCtrl.text.trim();
     if (email.isEmpty) {
-      _showError('Please enter your email address');
+      _showError(Provider.of<LanguageProvider>(context, listen: false).translate('enter_email_error'));
       return;
     }
 
@@ -70,6 +71,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final language = Provider.of<LanguageProvider>(context);
+
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       appBar: AppBar(
@@ -83,11 +86,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(Icons.lock_reset, size: 80, color: AppColors.accent),
+              Center(child: Image.asset('assets/images/logo.png', height: 80)),
               const SizedBox(height: 32),
-              const Text(
-                'Forgot Password',
-                style: TextStyle(
+              Text(
+                language.translate('forgot_password_title'),
+                style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
@@ -95,15 +98,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
-              const Text(
-                'Enter your email address to receive a password reset code.',
-                style: TextStyle(color: AppColors.textMuted, fontSize: 16),
+              Text(
+                language.translate('forgot_password_msg'),
+                style: const TextStyle(color: AppColors.textMuted, fontSize: 16),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
               Text(
-                'EMAIL ADDRESS',
-                style: TextStyle(
+                language.translate('email_label'),
+                style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textMuted,
@@ -129,7 +132,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ),
               const SizedBox(height: 32),
               GradientButton(
-                text: 'Send Reset Code',
+                text: language.translate('send_reset_code'),
                 isLoading: _isLoading,
                 onPressed: _sendCode,
                 icon: Icons.send,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../providers/language_provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../utils/constants.dart';
@@ -96,6 +97,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final language = Provider.of<LanguageProvider>(context);
+
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       body: Stack(
@@ -141,11 +144,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           BoxShadow(color: AppColors.accent.withValues(alpha: 0.3), blurRadius: 20, spreadRadius: 2),
                         ],
                       ),
-                      child: const Icon(Icons.bolt_rounded, size: 40, color: Colors.white),
+                      child: Image.asset('assets/images/logo.png', height: 40),
                     ),
                     const SizedBox(height: 24),
-                    const Text('Join EventHub', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
-                    const Text('Create your premium account', style: TextStyle(fontSize: 14, color: AppColors.textMuted)),
+                    Text(language.translate('join_eventhub'), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                    Text(language.translate('create_premium_account'), style: const TextStyle(fontSize: 14, color: AppColors.textMuted)),
                     const SizedBox(height: 24),
 
                     // ── Role Selection Toggle ──
@@ -158,8 +161,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       child: Row(
                         children: [
-                          _buildRoleTab('User', Icons.person_rounded, 'User'),
-                          _buildRoleTab('Assistant', Icons.qr_code_scanner_rounded, 'Assistant'),
+                          _buildRoleTab(language.translate('user_role'), Icons.person_rounded, 'User'),
+                          _buildRoleTab(language.translate('assistant_role'), Icons.qr_code_scanner_rounded, 'Assistant'),
                         ],
                       ),
                     ),
@@ -179,13 +182,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          _buildInputField(controller: _nameCtrl, hint: 'Full Name', icon: Icons.person_outline_rounded),
+                          _buildInputField(controller: _nameCtrl, hint: language.translate('full_name_label'), icon: Icons.person_outline_rounded),
                           const SizedBox(height: 16),
-                          _buildInputField(controller: _emailCtrl, hint: 'Email Address', icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress),
+                          _buildInputField(controller: _emailCtrl, hint: language.translate('email_label'), icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress),
                           const SizedBox(height: 16),
-                          _buildInputField(controller: _passCtrl, hint: 'Password', icon: Icons.lock_outline_rounded, isPassword: true),
+                          _buildInputField(controller: _passCtrl, hint: language.translate('password_label'), icon: Icons.lock_outline_rounded, isPassword: true),
                           const SizedBox(height: 16),
-                          _buildInputField(controller: _confirmCtrl, hint: 'Confirm Password', icon: Icons.lock_reset_rounded, isPassword: true, isConfirm: true),
+                          _buildInputField(controller: _confirmCtrl, hint: language.translate('confirm_password_label'), icon: Icons.lock_reset_rounded, isPassword: true, isConfirm: true),
                           const SizedBox(height: 32),
                           GestureDetector(
                             onTap: _register,
@@ -201,7 +204,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               child: Center(
                                 child: _isLoading
                                   ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                  : const Text('Create Account', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                                  : Text(language.translate('create_account_btn'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                               ),
                             ),
                           ),
@@ -214,10 +217,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("Already have an account? ", style: TextStyle(color: AppColors.textMuted)),
+                        Text(language.translate('already_have_account_msg'), style: const TextStyle(color: AppColors.textMuted)),
                         GestureDetector(
                           onTap: () => Navigator.pop(context),
-                          child: const Text('Sign In', style: TextStyle(color: AppColors.accent2, fontWeight: FontWeight.bold)),
+                          child: Text(language.translate('sign_in'), style: const TextStyle(color: AppColors.accent2, fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ),

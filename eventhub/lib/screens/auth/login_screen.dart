@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../utils/constants.dart';
 import '../../widgets/gradient_button.dart';
 import '../user/main_navigation.dart';
@@ -51,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     final pass = _passCtrl.text.trim();
 
     if (email.isEmpty || pass.isEmpty) {
-      _showError('Please fill all fields');
+      _showError(Provider.of<LanguageProvider>(context, listen: false).translate('please_fill_all_fields'));
       return;
     }
 
@@ -94,6 +95,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    final language = Provider.of<LanguageProvider>(context);
+    
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       body: Stack(
@@ -119,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             bottom: 50,
             child: Opacity(
               opacity: 0.03,
-              child: const Icon(Icons.bolt_rounded, size: 400, color: Colors.white),
+              child: Image.asset('assets/images/logo.png', width: 400),
             ),
           ),
 
@@ -142,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             child: Image.asset(
                               'assets/images/logo.png',
                               fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) => const Icon(Icons.bolt_rounded, size: 48, color: Colors.white),
+                              errorBuilder: (context, error, stackTrace) => const Center(),
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -150,9 +153,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             'EventHub',
                             style: TextStyle(fontSize: 36, fontWeight: FontWeight.w900, letterSpacing: -1),
                           ),
-                          const Text(
-                            'Premium Event Experiences',
-                            style: TextStyle(fontSize: 14, color: AppColors.textMuted, letterSpacing: 1),
+                          Text(
+                            language.translate('premium_experiences'),
+                            style: const TextStyle(fontSize: 14, color: AppColors.textMuted, letterSpacing: 1),
                           ),
                         ],
                       ),
@@ -181,18 +184,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              const Text('Sign In', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                              Text(language.translate('sign_in'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                               const SizedBox(height: 24),
                               _buildInputField(
                                 controller: _emailCtrl,
-                                hint: 'Email',
+                                hint: language.translate('email'),
                                 icon: Icons.email_outlined,
                                 keyboardType: TextInputType.emailAddress,
                               ),
                               const SizedBox(height: 16),
                               _buildInputField(
                                 controller: _passCtrl,
-                                hint: 'Password',
+                                hint: language.translate('password'),
                                 icon: Icons.lock_outline_rounded,
                                 isPassword: true,
                               ),
@@ -201,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                 alignment: Alignment.centerRight,
                                 child: TextButton(
                                   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen())),
-                                  child: const Text('Forgot Password?', style: TextStyle(color: AppColors.accent2, fontSize: 13)),
+                                  child: Text(language.translate('forgot_password'), style: const TextStyle(color: AppColors.accent2, fontSize: 13)),
                                 ),
                               ),
                               const SizedBox(height: 12),
@@ -223,7 +226,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                   child: Center(
                                     child: _isLoading
                                       ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                      : const Text('Login', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                                      : Text(language.translate('login'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                                   ),
                                 ),
                               ),
@@ -238,10 +241,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("Don't have an account? ", style: TextStyle(color: AppColors.textMuted)),
+                        Text(language.translate('dont_have_account'), style: const TextStyle(color: AppColors.textMuted)),
                         GestureDetector(
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())),
-                          child: const Text('Create Account', style: TextStyle(color: AppColors.accent2, fontWeight: FontWeight.bold)),
+                          child: Text(language.translate('create_account'), style: const TextStyle(color: AppColors.accent2, fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ),

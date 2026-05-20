@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../providers/assistant_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../providers/ticket_provider.dart';
 import '../../utils/constants.dart';
 
@@ -43,6 +44,7 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
   }
 
   void _openScanner() {
+    final language = Provider.of<LanguageProvider>(context, listen: false);
     final timeStatus = _data?['event']?['time_status'] ?? 'upcoming';
     if (timeStatus != 'live') {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -52,7 +54,7 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Cannot scan: This event is currently $timeStatus. Scanning is allowed only for Live events.',
+                '${language.translate('cannot_scan_msg')} $timeStatus. ${language.translate('scanning_allowed_msg')}',
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
@@ -91,6 +93,7 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final language = Provider.of<LanguageProvider>(context);
     final stats = _data?['stats'] ?? {};
     final totalTickets = stats['total_tickets'] ?? 0;
     final totalScanned = stats['total_scanned'] ?? 0;
@@ -158,7 +161,7 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                isLive ? 'Scan QR Code' : 'Scanning Locked',
+                                isLive ? language.translate('scan_qr_code') : language.translate('scanning_locked'),
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -168,8 +171,8 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
                               const SizedBox(height: 4),
                               Text(
                                 isLive
-                                    ? 'Tap to open camera'
-                                    : 'Scanning starts when event is Live',
+                                    ? language.translate('tap_to_open_camera')
+                                    : language.translate('scanning_starts_when_live'),
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: isLive ? Colors.white70 : Colors.white38,
@@ -184,14 +187,14 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
 
                     // ── Stats Cards ──
                     Row(
-                      children: [
-                        _statCard('Total', totalTickets.toString(), Icons.confirmation_number_outlined, AppColors.accent),
-                        const SizedBox(width: 12),
-                        _statCard('Scanned', totalScanned.toString(), Icons.check_circle_outline, AppColors.success),
-                        const SizedBox(width: 12),
-                        _statCard('My Scans', myScans.toString(), Icons.person_outline, AppColors.accent2),
-                      ],
-                    ),
+                       children: [
+                         _statCard(language.translate('total'), totalTickets.toString(), Icons.confirmation_number_outlined, AppColors.accent),
+                         const SizedBox(width: 12),
+                         _statCard(language.translate('scanned'), totalScanned.toString(), Icons.check_circle_outline, AppColors.success),
+                         const SizedBox(width: 12),
+                         _statCard(language.translate('my_scans'), myScans.toString(), Icons.person_outline, AppColors.accent2),
+                       ],
+                     ),
                     const SizedBox(height: 24),
 
                     // ── Search ──
@@ -204,24 +207,24 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
                       child: TextField(
                         onChanged: (v) => setState(() => _searchQuery = v),
                         decoration: InputDecoration(
-                          hintText: 'Search by name or QR code...',
-                          hintStyle: TextStyle(color: AppColors.textMuted.withValues(alpha: 0.4)),
-                          prefixIcon: const Icon(Icons.search_rounded, size: 20, color: AppColors.textMuted),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
+                           hintText: language.translate('search_name_qr'),
+                           hintStyle: TextStyle(color: AppColors.textMuted.withValues(alpha: 0.4)),
+                           prefixIcon: const Icon(Icons.search_rounded, size: 20, color: AppColors.textMuted),
+                           border: InputBorder.none,
+                           contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
 
                     // ── Participants Header ──
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Registered Attendees', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.accent2)),
-                        Text('${_filteredParticipants.length} found', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
-                      ],
-                    ),
+                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                       children: [
+                         Text(language.translate('registered_attendees'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.accent2)),
+                         Text('${_filteredParticipants.length} ${language.translate('found')}', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                       ],
+                     ),
                     const SizedBox(height: 12),
 
                     // ── Participants List ──
@@ -233,12 +236,12 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: AppColors.border),
                         ),
-                        child: const Center(
-                          child: Text('No participants found', style: TextStyle(color: AppColors.textMuted)),
-                        ),
+                        child: Center(
+                           child: Text(language.translate('no_participants_found'), style: const TextStyle(color: AppColors.textMuted)),
+                         ),
                       )
                     else
-                      ..._filteredParticipants.map((p) => _buildParticipantCard(p)),
+                      ..._filteredParticipants.map((p) => _buildParticipantCard(p, language)),
 
                     const SizedBox(height: 100),
                   ],
@@ -270,7 +273,7 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
     );
   }
 
-  Widget _buildParticipantCard(Map<String, dynamic> p) {
+  Widget _buildParticipantCard(Map<String, dynamic> p, LanguageProvider language) {
     final name = p['user_name'] ?? 'Unknown';
     final qrCode = p['qr_code'] ?? '';
     final status = p['ticket_status'] ?? 'valid';
@@ -353,13 +356,13 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              isUsed ? 'Scanned' : 'Valid',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: isUsed ? AppColors.textMuted : AppColors.success,
-              ),
-            ),
+               isUsed ? language.translate('scanned') : language.translate('valid'),
+               style: TextStyle(
+                 fontSize: 11,
+                 fontWeight: FontWeight.w600,
+                 color: isUsed ? AppColors.textMuted : AppColors.success,
+               ),
+             ),
           ),
         ],
       ),
@@ -439,13 +442,13 @@ class _QRScannerPageState extends State<_QRScannerPage> {
               child: Icon(_lastIcon, size: 48, color: success ? AppColors.success : AppColors.danger),
             ),
             const SizedBox(height: 16),
-            Text(
-              success ? 'Check-in Successful!' : 'Check-in Failed',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: success ? AppColors.success : AppColors.danger),
-            ),
-            const SizedBox(height: 8),
-            Text(message, style: const TextStyle(color: AppColors.textMuted), textAlign: TextAlign.center),
-          ],
+             Text(
+               success ? Provider.of<LanguageProvider>(context, listen: false).translate('checkin_successful') : Provider.of<LanguageProvider>(context, listen: false).translate('checkin_failed'),
+               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: success ? AppColors.success : AppColors.danger),
+             ),
+             const SizedBox(height: 8),
+             Text(message, style: const TextStyle(color: AppColors.textMuted), textAlign: TextAlign.center),
+           ],
         ),
         actions: [
           SizedBox(
@@ -460,10 +463,10 @@ class _QRScannerPageState extends State<_QRScannerPage> {
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: Text(Provider.of<LanguageProvider>(context, listen: false).translate('scan_next'), style: const TextStyle(fontWeight: FontWeight.bold)),
               ),
-              child: const Text('Scan Next', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
-          ),
         ],
       ),
     ).then((_) {
@@ -478,58 +481,62 @@ class _QRScannerPageState extends State<_QRScannerPage> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: Text(widget.eventTitle, style: const TextStyle(fontSize: 16)),
-        centerTitle: true,
-      ),
-      body: Stack(
-        children: [
-          // Camera
-          MobileScanner(
-            controller: _controller,
-            onDetect: _handleScan,
-          ),
-
-          // Overlay
-          Center(
-            child: Container(
-              width: 260,
-              height: 260,
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.accent, width: 2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-            ),
-          ),
-
-          // Bottom instruction
-          Positioned(
-            bottom: 40,
-            left: 0,
-            right: 0,
-            child: Column(
-              children: [
-                if (_isProcessing)
-                  const CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2)
-                else
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 40),
-                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Text(
-                      'Point camera at QR code on ticket',
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+         backgroundColor: Colors.black,
+         title: Text(widget.eventTitle, style: const TextStyle(fontSize: 16)),
+         centerTitle: true,
+       ),
+       body: Consumer<LanguageProvider>(
+         builder: (context, language, child) {
+           return Stack(
+             children: [
+               // Camera
+               MobileScanner(
+                 controller: _controller,
+                 onDetect: _handleScan,
+               ),
+ 
+               // Overlay
+               Center(
+                 child: Container(
+                   width: 260,
+                   height: 260,
+                   decoration: BoxDecoration(
+                     border: Border.all(color: AppColors.accent, width: 2),
+                     borderRadius: BorderRadius.circular(20),
+                   ),
+                 ),
+               ),
+ 
+               // Bottom instruction
+               Positioned(
+                 bottom: 40,
+                 left: 0,
+                 right: 0,
+                 child: Column(
+                   children: [
+                     if (_isProcessing)
+                       const CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2)
+                     else
+                       Container(
+                         margin: const EdgeInsets.symmetric(horizontal: 40),
+                         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+                         decoration: BoxDecoration(
+                           color: Colors.black.withValues(alpha: 0.7),
+                           borderRadius: BorderRadius.circular(16),
+                         ),
+                         child: Text(
+                           language.translate('point_camera_ticket'),
+                           style: const TextStyle(color: Colors.white70, fontSize: 14),
+                           textAlign: TextAlign.center,
+                         ),
+                       ),
+                   ],
+                 ),
+               ),
+             ],
+           );
+         },
+       ),
+     );
   }
 }

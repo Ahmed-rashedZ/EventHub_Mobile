@@ -9,7 +9,6 @@ import '../providers/assistant_provider.dart';
 import '../services/api_service.dart';
 import '../utils/constants.dart';
 import 'auth/login_screen.dart';
-import 'user/my_tickets_screen.dart';
 import 'user/settings_screen.dart';
 import 'user/main_navigation.dart';
 import '../providers/language_provider.dart';
@@ -22,9 +21,6 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  List<dynamic> _notifications = [];
-  bool _loadingNotifications = false;
-  int _unreadCount = 0;
   bool _isUploadingImage = false;
   List<String> _selectedInterests = [];
   List<String> _allCategories = [];
@@ -40,7 +36,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
       auth.refreshUser();
     });
-    _fetchNotifications();
     _fetchCategories();
   }
 
@@ -54,46 +49,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _allCategories = data.map((e) => e.toString()).toList();
         });
       }
-    } catch (_) {}
-  }
-
-  Future<void> _fetchNotifications() async {
-    setState(() => _loadingNotifications = true);
-    try {
-      final api = ApiService();
-      final res = await api.get('/notifications');
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        // Backend returns { notifications: [...], unread_count: N }
-        if (data is Map && data['notifications'] != null) {
-          setState(() {
-            _notifications = data['notifications'];
-            _unreadCount = data['unread_count'] ?? 0;
-          });
-        } else if (data is List) {
-          setState(() {
-            _notifications = data;
-            _unreadCount = data.where((n) => n['read_at'] == null).length;
-          });
-        }
-      }
-    } catch (_) {}
-    setState(() => _loadingNotifications = false);
-  }
-
-  Future<void> _markAsRead(dynamic id) async {
-    try {
-      final api = ApiService();
-      await api.put('/notifications/$id/read');
-      _fetchNotifications();
-    } catch (_) {}
-  }
-
-  Future<void> _markAllRead() async {
-    try {
-      final api = ApiService();
-      await api.put('/notifications/read-all');
-      _fetchNotifications();
     } catch (_) {}
   }
 
@@ -195,31 +150,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     Row(
                       children: [
-                        GestureDetector(
-                          onTap: () => _showNotificationsSheet(context),
-                          child: Stack(
-                            children: [
-                              const Icon(
-                                Icons.notifications_rounded,
-                                color: AppColors.accent2,
-                                size: 28,
-                              ),
-                              if (_unreadCount > 0)
-                                Positioned(
-                                  right: 0,
-                                  top: 0,
-                                  child: Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: const BoxDecoration(
-                                      color: AppColors.danger,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
                         const SizedBox(width: 16),
                         GestureDetector(
                           onTap: () {
@@ -376,9 +306,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Available for Assistance',
-                                    style: TextStyle(
+                                  Text(
+                                    language.translate('available_for_assistance'),
+                                    style: const TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.white,
@@ -387,8 +317,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   const SizedBox(height: 2),
                                   Text(
                                     assistantProv.isAvailable
-                                        ? 'Managers can find and invite you'
-                                        : 'You won\'t receive new invitations',
+                                        ? language.translate('available_desc')
+                                        : language.translate('unavailable_desc'),
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: AppColors.textMuted.withValues(alpha: 0.7),
@@ -433,14 +363,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: [
                           _buildStatCard(
                             icon: Icons.event_available_rounded,
-                            label: 'Events Assisted',
+                            label: language.translate('events_assisted'),
                             value: Provider.of<AssistantProvider>(context).workEvents.length.toString(),
                             color: AppColors.accent,
                           ),
                           const SizedBox(width: 16),
                           _buildStatCard(
                             icon: Icons.qr_code_scanner_rounded,
-                            label: 'Tickets Scanned',
+                            label: language.translate('tickets_scanned'),
                             value: user?['attendance_logs_count']?.toString() ?? '0',
                             color: AppColors.success,
                           ),
@@ -467,44 +397,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 32),
 
               // ── Interests ──
-              _buildSectionTitle(
-                language.translate('interests'),
-                language.translate('edit'),
-                onTapAction: () => _showInterestsDialog(),
-              ),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Container(
-                  width: double.infinity,
-                  padding: _selectedInterests.isEmpty
-                      ? const EdgeInsets.all(20)
-                      : const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.bgCard,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: _selectedInterests.isEmpty
-                      ? Center(
-                          child: Text(
-                            language.translate('no_interests'),
-                            style: const TextStyle(
-                              color: AppColors.textMuted,
-                              fontSize: 14,
-                            ),
-                          ),
-                        )
-                      : Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: _selectedInterests
-                              .map((interest) => _buildInterestTag(interest))
-                              .toList(),
-                        ),
+              if (auth.role != 'Assistant') ...[
+                _buildSectionTitle(
+                  language.translate('interests'),
+                  language.translate('edit'),
+                  onTapAction: () => _showInterestsDialog(),
                 ),
-              ),
-              const SizedBox(height: 32),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Container(
+                    width: double.infinity,
+                    padding: _selectedInterests.isEmpty
+                        ? const EdgeInsets.all(20)
+                        : const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.bgCard,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: _selectedInterests.isEmpty
+                        ? Center(
+                            child: Text(
+                              language.translate('no_interests'),
+                              style: const TextStyle(
+                                color: AppColors.textMuted,
+                                fontSize: 14,
+                              ),
+                            ),
+                          )
+                        : Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _selectedInterests
+                                .map((interest) => _buildInterestTag(interest))
+                                .toList(),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+              ],
 
               const SizedBox(height: 32),
 
@@ -767,27 +699,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  String _formatDate(String? dateStr) {
-    if (dateStr == null) return 'Unknown';
-    final dt = DateTime.tryParse(dateStr);
-    if (dt == null) return dateStr;
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
-  }
-
   // ─── Edit Profile Dialog ──────────────────────
   void _showEditProfileDialog(BuildContext context, AuthProvider auth) {
     final language = Provider.of<LanguageProvider>(context, listen: false);
@@ -949,257 +860,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ─── Notifications Sheet ──────────────────────
-  void _showNotificationsSheet(BuildContext context) {
-    final language = Provider.of<LanguageProvider>(context, listen: false);
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.bgCard,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.3,
-        maxChildSize: 0.85,
-        expand: false,
-        builder: (_, scrollCtrl) => Column(
-          children: [
-            // Handle
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.textMuted.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.notifications,
-                    color: AppColors.accent2,
-                    size: 22,
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    language.translate('notifications'),
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
-                  ),
-                  const Spacer(),
-                  if (_unreadCount > 0) ...[
-                    GestureDetector(
-                      onTap: () {
-                        _markAllRead();
-                        Navigator.pop(ctx);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.accent.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          language.translate('mark_all_read'),
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.accent,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.danger.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '$_unreadCount new',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.danger,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const Divider(color: AppColors.border, height: 1),
-            Expanded(
-              child: _loadingNotifications
-                  ? const Center(
-                      child: CircularProgressIndicator(color: AppColors.accent),
-                    )
-                  : _notifications.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.notifications_off_outlined,
-                            size: 56,
-                            color: AppColors.textMuted.withValues(alpha: 0.3),
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'No notifications yet',
-                            style: TextStyle(color: AppColors.textMuted),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      controller: scrollCtrl,
-                      itemCount: _notifications.length,
-                      itemBuilder: (_, i) {
-                        final n = _notifications[i];
-                        // Laravel Notifications: read_at == null means unread
-                        final isRead = n['read_at'] != null;
-                        // Data is stored in 'data' field (may be string or map)
-                        dynamic nData = n['data'];
-                        if (nData is String) {
-                          try {
-                            nData = jsonDecode(nData);
-                          } catch (_) {
-                            nData = {};
-                          }
-                        }
-                        nData ??= {};
-                        final title = nData['title']?.toString() ?? '';
-                        final message =
-                            nData['message']?.toString() ??
-                            n['message']?.toString() ??
-                            '';
-                        final icon = nData['icon']?.toString() ?? '🔔';
-                        final type = nData['type']?.toString() ?? 'system';
-
-                        Color typeColor;
-                        switch (type) {
-                          case 'event':
-                            typeColor = AppColors.accent;
-                            break;
-                          case 'sponsorship':
-                            typeColor = AppColors.warning;
-                            break;
-                          case 'ticket':
-                            typeColor = AppColors.success;
-                            break;
-                          case 'verification':
-                            typeColor = AppColors.accent2;
-                            break;
-                          default:
-                            typeColor = AppColors.textMuted;
-                        }
-
-                        return Container(
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isRead
-                                ? Colors.transparent
-                                : typeColor.withValues(alpha: 0.06),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isRead
-                                  ? Colors.transparent
-                                  : typeColor.withValues(alpha: 0.12),
-                            ),
-                          ),
-                          child: ListTile(
-                            leading: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color:
-                                    (isRead ? AppColors.textMuted : typeColor)
-                                        .withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                icon,
-                                style: const TextStyle(fontSize: 18),
-                              ),
-                            ),
-                            title: title.isNotEmpty
-                                ? Text(
-                                    title,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: isRead
-                                          ? FontWeight.w400
-                                          : FontWeight.w700,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  )
-                                : null,
-                            subtitle: Text(
-                              message,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: isRead
-                                    ? FontWeight.w400
-                                    : FontWeight.w500,
-                                color: isRead
-                                    ? AppColors.textMuted
-                                    : AppColors.textPrimary,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            trailing: !isRead
-                                ? GestureDetector(
-                                    onTap: () {
-                                      _markAsRead(n['id']);
-                                      Navigator.pop(ctx);
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.success.withValues(
-                                          alpha: 0.12,
-                                        ),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Icon(
-                                        Icons.check,
-                                        size: 16,
-                                        color: AppColors.success,
-                                      ),
-                                    ),
-                                  )
-                                : Text(
-                                    _formatDate(n['created_at']),
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      color: AppColors.textMuted,
-                                    ),
-                                  ),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   // ─── Interests Dialog ──────────────────────
   Future<void> _updateInterests() async {

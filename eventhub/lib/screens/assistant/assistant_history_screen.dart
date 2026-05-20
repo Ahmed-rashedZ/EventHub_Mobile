@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 import '../../providers/assistant_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../utils/constants.dart';
 import 'assistant_event_details_screen.dart';
 
@@ -34,6 +36,7 @@ class _AssistantHistoryScreenState extends State<AssistantHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final language = Provider.of<LanguageProvider>(context);
     final provider = Provider.of<AssistantProvider>(context);
     final events = provider.historyEvents;
 
@@ -47,21 +50,21 @@ class _AssistantHistoryScreenState extends State<AssistantHistoryScreen> {
             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
             slivers: [
               // ── Header ──
-              const SliverToBoxAdapter(
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                   child: Text(
-                    'History',
-                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white),
+                    language.translate('history'),
+                    style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                 ),
               ),
-              const SliverToBoxAdapter(
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(20, 4, 20, 16),
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
                   child: Text(
-                    'Past events you\'ve assisted in',
-                    style: TextStyle(fontSize: 14, color: AppColors.textMuted),
+                    language.translate('history_subtitle'),
+                    style: const TextStyle(fontSize: 14, color: AppColors.textMuted),
                   ),
                 ),
               ),
@@ -80,7 +83,7 @@ class _AssistantHistoryScreenState extends State<AssistantHistoryScreen> {
                       controller: _searchCtrl,
                       onChanged: _onSearch,
                       decoration: InputDecoration(
-                        hintText: 'Search by event or venue name...',
+                        hintText: language.translate('search_event_name_hint'),
                         hintStyle: TextStyle(color: AppColors.textMuted.withValues(alpha: 0.4)),
                         prefixIcon: const Icon(Icons.search_rounded, size: 20, color: AppColors.textMuted),
                         suffixIcon: _searchCtrl.text.isNotEmpty
@@ -120,10 +123,10 @@ class _AssistantHistoryScreenState extends State<AssistantHistoryScreen> {
                           child: Icon(Icons.history_rounded, size: 48, color: AppColors.accent.withValues(alpha: 0.5)),
                         ),
                         const SizedBox(height: 16),
-                        const Text('No Past Events', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+                        Text(language.translate('no_past_events'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
                         const SizedBox(height: 8),
                         Text(
-                          'Completed events will appear here',
+                          language.translate('completed_events_msg'),
                           style: TextStyle(fontSize: 14, color: AppColors.textMuted.withValues(alpha: 0.6)),
                         ),
                       ],
@@ -135,7 +138,7 @@ class _AssistantHistoryScreenState extends State<AssistantHistoryScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
-                      (context, index) => _buildHistoryCard(events[index]),
+                      (context, index) => _buildHistoryCard(events[index], language),
                       childCount: events.length,
                     ),
                   ),
@@ -149,16 +152,25 @@ class _AssistantHistoryScreenState extends State<AssistantHistoryScreen> {
     );
   }
 
-  Widget _buildHistoryCard(Map<String, dynamic> event) {
-    final title = event['title'] ?? 'Untitled';
-    final venueName = event['venue']?['name'] ?? 'TBA';
+  Widget _buildHistoryCard(Map<String, dynamic> event, LanguageProvider language) {
+    final title = event['title'] ?? language.translate('untitled');
+    final venue = event['venue'];
+    final externalName = event['external_venue_name'];
+    final externalLoc = event['external_venue_location'];
+
+    String venueName = language.translate('tba');
+    if (venue != null) {
+      venueName = venue['name'] ?? language.translate('tba');
+    } else if (externalName != null && externalName.toString().isNotEmpty) {
+      venueName = externalName.toString();
+    }
     final myScans = event['my_scans'] ?? 0;
     final imageUrl = ApiConstants.buildImageUrl(event['image']);
 
     final startStr = event['start_time'];
     final date = parseApiDateTime(startStr);
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    final dateStr = date != null ? '${months[date.month - 1]} ${date.day}, ${date.year}' : 'TBA';
+    final dateStr = date != null ? '${months[date.month - 1]} ${date.day}, ${date.year}' : language.translate('tba');
 
     return GestureDetector(
       onTap: () {
@@ -220,6 +232,17 @@ class _AssistantHistoryScreenState extends State<AssistantHistoryScreen> {
                       Expanded(child: Text(venueName, style: const TextStyle(fontSize: 12, color: AppColors.textMuted), overflow: TextOverflow.ellipsis)),
                     ],
                   ),
+                  if (venue == null && externalLoc != null && externalLoc.toString().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2, left: 16),
+                      child: GestureDetector(
+                        onTap: () => _launchVenueUrl(externalLoc.toString()),
+                        child: Text(
+                          language.translate('open_in_maps'),
+                          style: const TextStyle(color: AppColors.accent, fontSize: 10, fontWeight: FontWeight.w600, decoration: TextDecoration.underline),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -251,5 +274,16 @@ class _AssistantHistoryScreenState extends State<AssistantHistoryScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _launchVenueUrl(String url) async {
+    try {
+      final uri = Uri.parse(url.startsWith('http') ? url : 'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(url)}');
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      debugPrint("Error launching URL: $e");
+    }
   }
 }

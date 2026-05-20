@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../utils/constants.dart';
+import '../../providers/language_provider.dart';
 import '../../providers/assistant_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../profile_screen.dart';
@@ -41,6 +42,7 @@ class AssistantMainNavigationState extends State<AssistantMainNavigation> {
 
   @override
   Widget build(BuildContext context) {
+    final language = Provider.of<LanguageProvider>(context);
     return Scaffold(
       extendBody: true,
       body: AnimatedSwitcher(
@@ -69,10 +71,10 @@ class AssistantMainNavigationState extends State<AssistantMainNavigation> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _navItem(0, Icons.mail_rounded),
-              _navItem(1, Icons.work_rounded),
-              _navItem(2, Icons.history_rounded),
-              _navItem(3, Icons.person_rounded),
+              _navItem(0, Icons.mail_rounded, language.translate('assistance_requests')),
+              _navItem(1, Icons.work_rounded, language.translate('my_work')),
+              _navItem(2, Icons.history_rounded, language.translate('history')),
+              _navItem(3, Icons.person_rounded, language.translate('profile')),
             ],
           ),
         ),
@@ -80,7 +82,7 @@ class AssistantMainNavigationState extends State<AssistantMainNavigation> {
     );
   }
 
-  Widget _navItem(int index, IconData icon, {bool hasBadge = false}) {
+  Widget _navItem(int index, IconData icon, String tooltip, {bool hasBadge = false}) {
     final isSelected = _currentIndex == index;
 
     return GestureDetector(
@@ -101,28 +103,31 @@ class AssistantMainNavigationState extends State<AssistantMainNavigation> {
                 ]
               : [],
         ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? Colors.white : AppColors.textMuted,
-              size: 26,
-            ),
-            if (hasBadge)
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: AppColors.danger,
-                    shape: BoxShape.circle,
+        child: Tooltip(
+          message: tooltip,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Icon(
+                icon,
+                color: isSelected ? Colors.white : AppColors.textMuted,
+                size: 26,
+              ),
+              if (hasBadge)
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: AppColors.danger,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

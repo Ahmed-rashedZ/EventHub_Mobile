@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../providers/assistant_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../utils/constants.dart';
+import 'assistant_event_details_screen.dart';
 import 'assistant_event_work_screen.dart';
 
 class AssistantWorkScreen extends StatefulWidget {
@@ -22,6 +25,7 @@ class _AssistantWorkScreenState extends State<AssistantWorkScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final language = Provider.of<LanguageProvider>(context);
     final provider = Provider.of<AssistantProvider>(context);
     final events = provider.workEvents;
 
@@ -35,21 +39,21 @@ class _AssistantWorkScreenState extends State<AssistantWorkScreen> {
             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
             slivers: [
               // ── Header ──
-              const SliverToBoxAdapter(
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                   child: Text(
-                    'My Work',
-                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white),
+                    language.translate('my_work'),
+                    style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                 ),
               ),
-              const SliverToBoxAdapter(
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(20, 4, 20, 20),
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
                   child: Text(
-                    'Events you\'re assigned to assist',
-                    style: TextStyle(fontSize: 14, color: AppColors.textMuted),
+                    language.translate('my_work_subtitle'),
+                    style: const TextStyle(fontSize: 14, color: AppColors.textMuted),
                   ),
                 ),
               ),
@@ -74,10 +78,10 @@ class _AssistantWorkScreenState extends State<AssistantWorkScreen> {
                           child: Icon(Icons.work_off_rounded, size: 48, color: AppColors.accent.withValues(alpha: 0.5)),
                         ),
                         const SizedBox(height: 16),
-                        const Text('No Active Events', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+                        Text(language.translate('no_active_events'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
                         const SizedBox(height: 8),
                         Text(
-                          'Accept invitations to see events here',
+                          language.translate('accept_invitations_msg'),
                           style: TextStyle(fontSize: 14, color: AppColors.textMuted.withValues(alpha: 0.6)),
                         ),
                       ],
@@ -89,7 +93,7 @@ class _AssistantWorkScreenState extends State<AssistantWorkScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
-                      (context, index) => _buildWorkEventCard(events[index]),
+                      (context, index) => _buildWorkEventCard(events[index], language),
                       childCount: events.length,
                     ),
                   ),
@@ -103,9 +107,21 @@ class _AssistantWorkScreenState extends State<AssistantWorkScreen> {
     );
   }
 
-  Widget _buildWorkEventCard(Map<String, dynamic> event) {
-    final title = event['title'] ?? 'Untitled';
-    final venueName = event['venue']?['name'] ?? 'TBA';
+  Widget _buildWorkEventCard(Map<String, dynamic> event, LanguageProvider language) {
+    final title = event['title'] ?? language.translate('untitled');
+    final venue = event['venue'];
+    final externalName = event['external_venue_name'];
+    final externalLoc = event['external_venue_location'];
+
+    String venueName = language.translate('tba');
+    if (venue != null) {
+      venueName = venue['name'] ?? language.translate('tba');
+    } else if (externalName != null && externalName.toString().isNotEmpty) {
+      venueName = externalName.toString();
+      if (externalLoc != null && externalLoc.toString().isNotEmpty) {
+        venueName += " ($externalLoc)";
+      }
+    }
     final timeStatus = event['time_status'] ?? 'upcoming';
     final isLive = timeStatus == 'live';
     final totalTickets = event['total_tickets'] ?? 0;
@@ -115,19 +131,10 @@ class _AssistantWorkScreenState extends State<AssistantWorkScreen> {
     final startStr = event['start_time'];
     final date = parseApiDateTime(startStr);
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    final dateStr = date != null ? '${months[date.month - 1]} ${date.day}' : 'TBA';
+    final dateStr = date != null ? '${months[date.month - 1]} ${date.day}' : language.translate('tba');
     final timeStr = formatTo12Hour(date);
 
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => AssistantEventWorkScreen(eventId: event['id'], eventTitle: title),
-          ),
-        );
-      },
-      child: Container(
+    return Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: AppColors.bgCard,
@@ -140,48 +147,58 @@ class _AssistantWorkScreenState extends State<AssistantWorkScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image with status badge
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(19)),
-                  child: imageUrl != null
-                      ? Image.network(imageUrl, height: 100, width: double.infinity, fit: BoxFit.cover,
-                          colorBlendMode: BlendMode.darken,
-                          color: Colors.black.withValues(alpha: 0.3),
-                          errorBuilder: (_, __, ___) => _placeholderImage())
-                      : _placeholderImage(),
-                ),
-                // Status badge
-                Positioned(
-                  top: 10,
-                  left: 10,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isLive ? AppColors.success : AppColors.accent,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isLive) ...[
-                          Container(
-                            width: 6, height: 6,
-                            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+            // Image Tap leads to Details
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AssistantEventDetailsScreen(eventId: event['id'], eventTitle: title),
+                  ),
+                );
+              },
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(19)),
+                    child: imageUrl != null
+                        ? Image.network(imageUrl, height: 100, width: double.infinity, fit: BoxFit.cover,
+                            colorBlendMode: BlendMode.darken,
+                            color: Colors.black.withValues(alpha: 0.3),
+                            errorBuilder: (_, __, ___) => _placeholderImage())
+                        : _placeholderImage(),
+                  ),
+                  // Status badge
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isLive ? AppColors.success : AppColors.accent,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (isLive) ...[
+                            Container(
+                              width: 6, height: 6,
+                              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                            ),
+                            const SizedBox(width: 4),
+                          ],
+                          Text(
+                            isLive ? language.translate('live') : language.translate('upcoming_upper'),
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.5),
                           ),
-                          const SizedBox(width: 4),
                         ],
-                        Text(
-                          isLive ? 'LIVE' : 'UPCOMING',
-                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.5),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
 
             Padding(
@@ -189,32 +206,63 @@ class _AssistantWorkScreenState extends State<AssistantWorkScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white)),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.calendar_today_rounded, size: 14, color: AppColors.textMuted),
-                      const SizedBox(width: 6),
-                      Text('$dateStr $timeStr', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
-                      const SizedBox(width: 16),
-                      const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textMuted),
-                      const SizedBox(width: 4),
-                      Expanded(child: Text(venueName, style: const TextStyle(fontSize: 12, color: AppColors.textMuted), overflow: TextOverflow.ellipsis)),
-                    ],
-                  ),
-                  if (event['creator'] != null) ...[
-                    const SizedBox(height: 6),
-                    Row(
+                  // Info area tap leads to Details
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AssistantEventDetailsScreen(eventId: event['id'], eventTitle: title),
+                        ),
+                      );
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.person_outline_rounded, size: 14, color: AppColors.textMuted),
-                        const SizedBox(width: 6),
-                        Text('Manager: ${event['creator']['name'] ?? 'Unknown'}', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                        Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white)),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(Icons.calendar_today_rounded, size: 14, color: AppColors.textMuted),
+                            const SizedBox(width: 6),
+                            Text('$dateStr $timeStr', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                            const SizedBox(width: 16),
+                            const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textMuted),
+                            const SizedBox(width: 4),
+                             Expanded(
+                               child: Column(
+                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                 children: [
+                                   Text(venueName, style: const TextStyle(fontSize: 12, color: AppColors.textMuted), overflow: TextOverflow.ellipsis),
+                                   if (venue == null && externalLoc != null && externalLoc.toString().isNotEmpty)
+                                     GestureDetector(
+                                       onTap: () => _launchVenueUrl(externalLoc.toString()),
+                                       child: Text(
+                                         language.translate('open_in_maps'),
+                                         style: const TextStyle(color: AppColors.accent, fontSize: 11, fontWeight: FontWeight.w600, decoration: TextDecoration.underline),
+                                       ),
+                                     ),
+                                 ],
+                               ),
+                             ),
+                          ],
+                        ),
+                        if (event['creator'] != null) ...[
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              const Icon(Icons.person_outline_rounded, size: 14, color: AppColors.textMuted),
+                              const SizedBox(width: 6),
+                              Text('${language.translate('manager_label')} ${event['creator']['name'] ?? 'Unknown'}', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
-                  ],
+                  ),
                   const SizedBox(height: 12),
 
-                  // Scan progress
+                  // Scan progress Row
                   Row(
                     children: [
                       Expanded(
@@ -224,7 +272,7 @@ class _AssistantWorkScreenState extends State<AssistantWorkScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('Scanned', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                                Text(language.translate('scanned'), style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
                                 Text('$scannedTickets / $totalTickets', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.accent)),
                               ],
                             ),
@@ -242,13 +290,31 @@ class _AssistantWorkScreenState extends State<AssistantWorkScreen> {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          gradient: AppColors.accentGradient,
-                          borderRadius: BorderRadius.circular(12),
+                      // Arrow tap leads to Work Screen (Scanner)
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AssistantEventWorkScreen(eventId: event['id'], eventTitle: title),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            gradient: AppColors.accentGradient,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.accent.withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(Icons.arrow_forward_rounded, size: 20, color: Colors.white),
                         ),
-                        child: const Icon(Icons.arrow_forward_rounded, size: 20, color: Colors.white),
                       ),
                     ],
                   ),
@@ -257,8 +323,18 @@ class _AssistantWorkScreenState extends State<AssistantWorkScreen> {
             ),
           ],
         ),
-      ),
     );
+  }
+
+  Future<void> _launchVenueUrl(String url) async {
+    try {
+      final uri = Uri.parse(url.startsWith('http') ? url : 'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(url)}');
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      debugPrint("Error launching URL: $e");
+    }
   }
 
   Widget _placeholderImage() {

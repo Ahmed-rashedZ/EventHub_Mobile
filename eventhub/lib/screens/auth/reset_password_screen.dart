@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../providers/language_provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../utils/constants.dart';
@@ -32,17 +33,17 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     final confirmPass = _confirmPassCtrl.text.trim();
 
     if (pass.isEmpty || confirmPass.isEmpty) {
-      _showError('Please fill all fields');
+      _showError(Provider.of<LanguageProvider>(context, listen: false).translate('please_fill_all_fields'));
       return;
     }
 
     if (pass != confirmPass) {
-      _showError('Passwords do not match');
+      _showError(Provider.of<LanguageProvider>(context, listen: false).translate('passwords_dont_match'));
       return;
     }
 
     if (pass.length < 8) {
-      _showError('Password must be at least 8 characters');
+      _showError(Provider.of<LanguageProvider>(context, listen: false).translate('password_min_length'));
       return;
     }
 
@@ -60,7 +61,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       // Show success message and navigate to login
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Password reset successfully! Please login.'),
+          content: Text(Provider.of<LanguageProvider>(context, listen: false).translate('password_reset_success')),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
         ),
@@ -87,6 +88,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final language = Provider.of<LanguageProvider>(context);
+
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       appBar: AppBar(
@@ -100,11 +103,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(Icons.password, size: 80, color: AppColors.accent),
+              Center(child: Image.asset('assets/images/logo.png', height: 80)),
               const SizedBox(height: 32),
-              const Text(
-                'New Password',
-                style: TextStyle(
+              Text(
+                language.translate('reset_password_title'),
+                style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
@@ -112,14 +115,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
-              const Text(
-                'Create a new strong password for your account.',
-                style: TextStyle(color: AppColors.textMuted, fontSize: 16),
+              Text(
+                language.translate('reset_password_msg'),
+                style: const TextStyle(color: AppColors.textMuted, fontSize: 16),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
 
-              _buildLabel('NEW PASSWORD'),
+              _buildLabel(language.translate('new_password_label')),
               const SizedBox(height: 8),
               TextField(
                 controller: _passCtrl,
@@ -144,7 +147,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               ),
               const SizedBox(height: 20),
 
-              _buildLabel('CONFIRM PASSWORD'),
+              _buildLabel(language.translate('confirm_password_label')),
               const SizedBox(height: 8),
               TextField(
                 controller: _confirmPassCtrl,
@@ -171,7 +174,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
               const SizedBox(height: 32),
               GradientButton(
-                text: 'Reset Password',
+                text: language.translate('reset_password_btn'),
                 isLoading: _isLoading,
                 onPressed: _resetPassword,
                 icon: Icons.save,
