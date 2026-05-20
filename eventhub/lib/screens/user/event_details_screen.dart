@@ -235,12 +235,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final mappedExhibitors = exhibitors.map((ex) {
       final company = ex['company'];
       final profile = company?['profile'];
-      final booth = ex['booth'];
+      final name = profile?['company_name'] ?? company?['name'] ?? 'Company';
+      
       return {
         'id': company?['id'],
-        'name': profile?['company_name'] ?? company?['name'] ?? 'Company',
-        'logo': profile?['logo'],
-        'booth_label': booth != null ? booth['label'] : null,
+        'name': name,
+        'logo': ApiConstants.buildImageUrl(profile?['logo']),
       };
     }).toList();
     final isStarted = dt.isBefore(DateTime.now());
@@ -473,13 +473,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         ),
                       ),
                     ],
-                    // Exhibitors section
                     if (mappedExhibitors.isNotEmpty) ...[
                       const SizedBox(height: 24),
                       _sectionTitle(language.translate('participating_companies'), Icons.business_outlined),
                       const SizedBox(height: 12),
                       SizedBox(
-                        height: 80,
+                        height: 90,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           itemCount: mappedExhibitors.length,
@@ -781,10 +780,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   Widget _buildExhibitorCard(Map<String, dynamic> exhibitor) {
-    final language = Provider.of<LanguageProvider>(context);
-    final name = exhibitor['name'];
+    final name = exhibitor['name'] ?? 'Company';
     final logo = exhibitor['logo'];
-    final boothLabel = exhibitor['booth_label'];
     const accentColor = AppColors.accent2;
 
     return GestureDetector(
@@ -822,14 +819,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-              if (boothLabel != null) ...[
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: accentColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
-                  child: Text('${language.translate('booth')}: $boothLabel', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: accentColor)),
-                ),
-              ],
             ],
           ),
         ]),
