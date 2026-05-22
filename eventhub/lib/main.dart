@@ -32,10 +32,11 @@ void main() async {
   try {
     if (!kIsWeb) {
       await Firebase.initializeApp();
-      // Start notification service in background so it doesn't block UI
-      FCMService.initialize(); 
+      await FCMService.initialize();
     } else {
-      debugPrint('Firebase initialization skipped on Web (requires web config).');
+      debugPrint(
+        'Firebase initialization skipped on Web (requires web config).',
+      );
     }
   } catch (e) {
     debugPrint('Firebase initialization failed: $e');
@@ -72,19 +73,16 @@ class EventHubApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('en'),
-        Locale('ar'),
-      ],
+      supportedLocales: const [Locale('en'), Locale('ar')],
       theme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: AppColors.bgDark,
         cardColor: AppColors.bgCard,
         textTheme: GoogleFonts.interTextTheme(
           Theme.of(context).textTheme.apply(
-                bodyColor: AppColors.textPrimary,
-                displayColor: AppColors.textPrimary,
-              ),
+            bodyColor: AppColors.textPrimary,
+            displayColor: AppColors.textPrimary,
+          ),
         ),
         colorScheme: const ColorScheme.dark(
           primary: AppColors.accent,
@@ -118,11 +116,16 @@ class EventHubApp extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
         ),
         snackBarTheme: SnackBarThemeData(
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       ),
       home: const SplashScreen(),

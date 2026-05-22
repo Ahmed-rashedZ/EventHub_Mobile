@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LanguageProvider with ChangeNotifier {
-  Locale _locale = const Locale('ar'); 
+  Locale _locale = const Locale('ar');
   Locale get locale => _locale;
 
   static const String _prefKey = 'selected_language';
@@ -22,7 +22,7 @@ class LanguageProvider with ChangeNotifier {
 
   void setLanguage(String languageCode) async {
     if (_locale.languageCode == languageCode) return;
-    
+
     _locale = Locale(languageCode);
     notifyListeners();
 
@@ -111,8 +111,11 @@ class LanguageProvider with ChangeNotifier {
     'create_premium_account': 'Create your premium account',
     'already_have_account_msg': 'Already have an account?',
     'full_name_label': 'Full Name',
+    'password_label': 'Password',
     'confirm_password_label': 'Confirm Password',
     'create_account_btn': 'Create Account',
+    'user_role': 'User',
+    'assistant_role': 'Assistant',
     'verify_code_title': 'Verify Code',
     'verify_code_msg': 'We sent a 6-digit code to',
     'verification_code_label': 'VERIFICATION CODE',
@@ -437,11 +440,14 @@ class LanguageProvider with ChangeNotifier {
     'email_label': 'البريد الإلكتروني',
     'send_reset_code': 'إرسال رمز إعادة التعيين',
     'enter_email_error': 'يرجى إدخال عنوان بريدك الإلكتروني',
-    'join_eventhub': 'انضم إلى إيفنت هاب',
+    'join_eventhub': 'انضم إلى EventHub',
     'create_premium_account': 'أنشئ حسابك المتميز',
     'already_have_account_msg': 'هل لديك حساب بالفعل؟',
     'full_name_label': 'الاسم الكامل',
+    'password_label': 'كلمة المرور',
     'confirm_password_label': 'تأكيد كلمة المرور',
+    'user_role': 'مستخدم',
+    'assistant_role': 'مساعد',
     'create_account_btn': 'إنشاء حساب',
     'verify_code_title': 'تحقق من الرمز',
     'verify_code_msg': 'لقد أرسلنا رمزًا مكونًا من 6 أرقام إلى',

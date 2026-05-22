@@ -22,6 +22,8 @@ class NotificationProvider extends ChangeNotifier {
         return Icons.confirmation_number_rounded;
       case 'event':
         return Icons.event_available_rounded;
+      case 'assistant_request':
+        return Icons.mail_rounded;
       case 'sponsorship':
         return Icons.handshake_rounded;
       case 'verification':

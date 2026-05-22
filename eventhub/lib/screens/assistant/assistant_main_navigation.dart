@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../utils/constants.dart';
@@ -8,6 +9,7 @@ import '../profile_screen.dart';
 import 'assistant_requests_screen.dart';
 import 'assistant_work_screen.dart';
 import 'assistant_history_screen.dart';
+import '../../services/fcm_service.dart';
 
 class AssistantMainNavigation extends StatefulWidget {
   const AssistantMainNavigation({super.key});
@@ -18,6 +20,8 @@ class AssistantMainNavigation extends StatefulWidget {
 
 class AssistantMainNavigationState extends State<AssistantMainNavigation> {
   int _currentIndex = 0;
+  StreamSubscription? _foregroundSub;
+  StreamSubscription? _tapSub;
 
   @override
   void initState() {
@@ -26,7 +30,52 @@ class AssistantMainNavigationState extends State<AssistantMainNavigation> {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       final assistant = Provider.of<AssistantProvider>(context, listen: false);
       assistant.loadAvailabilityFromUser(auth.user);
+      _listenToFCM();
+      _checkInitialNotification();
     });
+  }
+
+  @override
+  void dispose() {
+    _foregroundSub?.cancel();
+    _tapSub?.cancel();
+    super.dispose();
+  }
+
+  void _listenToFCM() {
+    final assistantProvider = context.read<AssistantProvider>();
+
+    // Foreground message: auto-refresh requests list
+    _foregroundSub = FCMService.onForegroundMessage.listen((message) {
+      final type = message.data['type'];
+      if (type == 'assistant_request' || type == 'event') {
+        assistantProvider.fetchRequests();
+      }
+    });
+
+    // Notification tap: go to requests screen (index 0)
+    _tapSub = FCMService.onNotificationTap.listen((data) {
+      _handleNotificationNavigation(data);
+    });
+  }
+
+  void _checkInitialNotification() async {
+    final data = await FCMService.getInitialNotification();
+    if (data != null && mounted) {
+      _handleNotificationNavigation(data);
+    }
+  }
+
+  void _handleNotificationNavigation(Map<String, dynamic> data) {
+    final type = data['type'];
+    if (type != 'assistant_request' && type != 'event') return;
+
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
+    setIndex(0);
+    // Also trigger refresh just in case
+    context.read<AssistantProvider>().fetchRequests();
   }
 
   void setIndex(int index) {

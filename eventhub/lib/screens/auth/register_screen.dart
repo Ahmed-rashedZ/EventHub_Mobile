@@ -106,24 +106,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
           // ── Background Decorations ──
           Positioned(
             top: -100,
-            left: -100,
+            right: -100,
             child: Container(
               width: 300,
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [AppColors.accent2.withValues(alpha: 0.15), Colors.transparent],
+                  colors: [AppColors.accent.withValues(alpha: 0.15), Colors.transparent],
                 ),
               ),
             ),
           ),
           Positioned(
-            right: -50,
-            bottom: -50,
+            left: -50,
+            bottom: 50,
             child: Opacity(
               opacity: 0.03,
-              child: const Icon(Icons.person_add_rounded, size: 400, color: Colors.white),
+              child: Image.asset('assets/images/logo.png', width: 400),
             ),
           ),
 
@@ -134,21 +134,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                 child: Column(
                   children: [
-                    // Logo Area
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: AppColors.accentGradient,
-                        boxShadow: [
-                          BoxShadow(color: AppColors.accent.withValues(alpha: 0.3), blurRadius: 20, spreadRadius: 2),
-                        ],
+                    SizedBox(
+                      width: 100,
+                      height: 100,
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => const Center(),
                       ),
-                      child: Image.asset('assets/images/logo.png', height: 40),
                     ),
                     const SizedBox(height: 24),
-                    Text(language.translate('join_eventhub'), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
-                    Text(language.translate('create_premium_account'), style: const TextStyle(fontSize: 14, color: AppColors.textMuted)),
+                    const Text(
+                      'EventHub',
+                      style: TextStyle(fontSize: 36, fontWeight: FontWeight.w900, letterSpacing: -1),
+                    ),
+                    Text(
+                      language.translate('create_premium_account'),
+                      style: const TextStyle(fontSize: 14, color: AppColors.textMuted, letterSpacing: 1),
+                    ),
                     const SizedBox(height: 24),
 
                     // ── Role Selection Toggle ──

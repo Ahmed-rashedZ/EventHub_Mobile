@@ -29,10 +29,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: Text(language.translate('settings')),
         leading: IconButton(
           icon: Icon(
-            language.isArabic ? Icons.arrow_back_ios_rounded : Icons.arrow_back_ios_new_rounded, 
-            size: 20
+            language.isArabic ? Icons.arrow_back_ios_rounded : Icons.arrow_back_ios_new_rounded,
+            size: 20,
           ),
-          onPressed: () => Navigator.pop(context), 
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SingleChildScrollView(
@@ -54,10 +54,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ]),
             _buildSection(language.translate('app_preferences'), [
-              _buildSettingItem(Icons.language_rounded, language.translate('language'), 
+              _buildSettingItem(Icons.language_rounded, language.translate('language'),
                 trailing: Text(
-                  '${language.isArabic ? 'العربية' : 'English'} >', 
-                  style: const TextStyle(fontSize: 13, color: AppColors.textMuted)
+                  '${language.isArabic ? 'العربية' : 'English'} >',
+                  style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
                 ),
                 onTap: () => _showLanguageSheet(context, language),
               ),
@@ -372,20 +372,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           ListTile(title: Text(language.translate('select_language'), style: const TextStyle(fontWeight: FontWeight.bold))),
           ListTile(
-            title: Text(language.translate('english')), 
-            trailing: !language.isArabic ? const Icon(Icons.check, color: AppColors.accent2) : null, 
+            title: Text(language.translate('english')),
+            trailing: !language.isArabic ? const Icon(Icons.check, color: AppColors.accent2) : null,
             onTap: () {
               language.setLanguage('en');
               Navigator.pop(context);
-            }
+            },
           ),
           ListTile(
-            title: Text(language.translate('arabic')), 
-            trailing: language.isArabic ? const Icon(Icons.check, color: AppColors.accent2) : null, 
+            title: Text(language.translate('arabic')),
+            trailing: language.isArabic ? const Icon(Icons.check, color: AppColors.accent2) : null,
             onTap: () {
               language.setLanguage('ar');
               Navigator.pop(context);
-            }
+            },
           ),
           const SizedBox(height: 20),
         ],

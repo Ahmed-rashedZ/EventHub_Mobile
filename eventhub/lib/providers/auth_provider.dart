@@ -38,6 +38,7 @@ class AuthProvider extends ChangeNotifier {
     if (token != null && userData != null) {
       _user = jsonDecode(userData);
       _isAuthenticated = true;
+      FCMService.refreshAndSaveToken();
     } else {
       _user = null;
       _isAuthenticated = false;
