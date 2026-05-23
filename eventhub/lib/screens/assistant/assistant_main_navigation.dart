@@ -15,7 +15,8 @@ class AssistantMainNavigation extends StatefulWidget {
   const AssistantMainNavigation({super.key});
 
   @override
-  State<AssistantMainNavigation> createState() => AssistantMainNavigationState();
+  State<AssistantMainNavigation> createState() =>
+      AssistantMainNavigationState();
 }
 
 class AssistantMainNavigationState extends State<AssistantMainNavigation> {
@@ -121,7 +122,11 @@ class AssistantMainNavigationState extends State<AssistantMainNavigation> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _navItem(0, Icons.work_rounded, language.translate('my_work')),
-              _navItem(1, Icons.mail_rounded, language.translate('assistance_requests')),
+              _navItem(
+                1,
+                Icons.mail_rounded,
+                language.translate('assistance_requests'),
+              ),
               _navItem(2, Icons.history_rounded, language.translate('history')),
               _navItem(3, Icons.person_rounded, language.translate('profile')),
             ],
@@ -131,7 +136,12 @@ class AssistantMainNavigationState extends State<AssistantMainNavigation> {
     );
   }
 
-  Widget _navItem(int index, IconData icon, String tooltip, {bool hasBadge = false}) {
+  Widget _navItem(
+    int index,
+    IconData icon,
+    String tooltip, {
+    bool hasBadge = false,
+  }) {
     final isSelected = _currentIndex == index;
 
     return GestureDetector(
@@ -142,15 +152,16 @@ class AssistantMainNavigationState extends State<AssistantMainNavigation> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: isSelected ? AppColors.accentGradient : null,
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.accent2.withValues(alpha: 0.4),
-                    blurRadius: 12,
-                    spreadRadius: 1,
-                  ),
-                ]
-              : [],
+          boxShadow:
+              isSelected
+                  ? [
+                    BoxShadow(
+                      color: AppColors.accent2.withValues(alpha: 0.4),
+                      blurRadius: 12,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                  : [],
         ),
         child: Tooltip(
           message: tooltip,
