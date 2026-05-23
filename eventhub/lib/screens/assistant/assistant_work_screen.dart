@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/assistant_provider.dart';
 import '../../providers/language_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../utils/constants.dart';
 import 'assistant_event_details_screen.dart';
 import 'assistant_event_work_screen.dart';
@@ -42,9 +43,63 @@ class _AssistantWorkScreenState extends State<AssistantWorkScreen> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  child: Row(
+                    children: [
+                      (() {
+                        final auth = Provider.of<AuthProvider>(context);
+                        final user = auth.user;
+                        final logo = user?['profile']?['logo'];
+                        final imageUrl = logo != null ? ApiConstants.buildImageUrl(logo) : null;
+                        return CircleAvatar(
+                          radius: 24,
+                          backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
+                          backgroundColor: AppColors.accent.withValues(alpha: 0.2),
+                          child: imageUrl == null
+                              ? Text(
+                                  auth.userName.isNotEmpty ? auth.userName[0].toUpperCase() : '?',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.accent),
+                                )
+                              : null,
+                        );
+                      })(),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              Provider.of<AuthProvider>(context).userName,
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
+                            ),
+                            Text(
+                              language.translate('assistant'),
+                              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                            ),
+                          ],
+                        ),
+                      ),
+                      ShaderMask(
+                        shaderCallback: (bounds) => const LinearGradient(
+                          colors: [AppColors.accent2, AppColors.accent],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ).createShader(bounds),
+                        child: const Text(
+                          'EventHub',
+                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -1.0),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // ── Title ──
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
                   child: Text(
                     language.translate('my_work'),
-                    style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white),
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                 ),
               ),

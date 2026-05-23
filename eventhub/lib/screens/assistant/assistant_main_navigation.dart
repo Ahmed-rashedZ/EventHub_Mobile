@@ -73,7 +73,7 @@ class AssistantMainNavigationState extends State<AssistantMainNavigation> {
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).popUntil((route) => route.isFirst);
     }
-    setIndex(0);
+    setIndex(1);
     // Also trigger refresh just in case
     context.read<AssistantProvider>().fetchRequests();
   }
@@ -83,8 +83,8 @@ class AssistantMainNavigationState extends State<AssistantMainNavigation> {
   }
 
   final List<Widget> _screens = [
-    const AssistantRequestsScreen(),
     const AssistantWorkScreen(),
+    const AssistantRequestsScreen(),
     const AssistantHistoryScreen(),
     const ProfileScreen(),
   ];
@@ -120,8 +120,8 @@ class AssistantMainNavigationState extends State<AssistantMainNavigation> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _navItem(0, Icons.mail_rounded, language.translate('assistance_requests')),
-              _navItem(1, Icons.work_rounded, language.translate('my_work')),
+              _navItem(0, Icons.work_rounded, language.translate('my_work')),
+              _navItem(1, Icons.mail_rounded, language.translate('assistance_requests')),
               _navItem(2, Icons.history_rounded, language.translate('history')),
               _navItem(3, Icons.person_rounded, language.translate('profile')),
             ],

@@ -62,15 +62,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap: () => _showLanguageSheet(context, language),
               ),
             ]),
-            _buildSection(language.translate('support'), [
-              _buildSettingItem(Icons.help_outline_rounded, language.translate('help_center')),
-              _buildSettingItem(Icons.contact_support_outlined, language.translate('contact_support'), onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(language.translate('support')), behavior: SnackBarBehavior.floating));
-              }),
-            ]),
             _buildSection(language.translate('about'), [
-              _buildSettingItem(Icons.info_outline_rounded, '${language.translate('version')} 2.3.1'),
-              _buildSettingItem(Icons.gavel_rounded, language.translate('legal_notices'), onTap: () => _showLegalDialog(context)),
+              _buildSettingItem(Icons.info_outline_rounded, '${language.translate('version')} 0.0.1'),
             ]),
             const SizedBox(height: 32),
             
