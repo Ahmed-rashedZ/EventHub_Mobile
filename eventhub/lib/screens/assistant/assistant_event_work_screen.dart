@@ -96,8 +96,8 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
     final language = Provider.of<LanguageProvider>(context);
     final stats = _data?['stats'] ?? {};
     final totalTickets = stats['total_tickets'] ?? 0;
-    final totalScanned = stats['total_scanned'] ?? 0;
-    final myScans = stats['my_scans'] ?? 0;
+    final scannedToday = stats['scanned_today'] ?? 0;
+    final myScansToday = stats['my_scans_today'] ?? 0;
 
     return Scaffold(
       backgroundColor: AppColors.bgDark,
@@ -190,9 +190,9 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
                        children: [
                          _statCard(language.translate('total'), totalTickets.toString(), Icons.confirmation_number_outlined, AppColors.accent),
                          const SizedBox(width: 12),
-                         _statCard(language.translate('scanned'), totalScanned.toString(), Icons.check_circle_outline, AppColors.success),
+                         _statCard(language.translate('scanned_today'), scannedToday.toString(), Icons.check_circle_outline, AppColors.success),
                          const SizedBox(width: 12),
-                         _statCard(language.translate('my_scans'), myScans.toString(), Icons.person_outline, AppColors.accent2),
+                         _statCard(language.translate('my_scans'), myScansToday.toString(), Icons.person_outline, AppColors.accent2),
                        ],
                      ),
                     const SizedBox(height: 24),
@@ -277,7 +277,8 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
     final name = p['user_name'] ?? 'Unknown';
     final qrCode = p['qr_code'] ?? '';
     final status = p['ticket_status'] ?? 'valid';
-    final isUsed = status == 'used';
+    final scannedToday = p['scanned_today'] ?? false;
+    final totalDaysAttended = p['total_days_attended'] ?? 0;
     final scannedBy = p['scanned_by'];
     final scannedAt = p['scanned_at'];
 
@@ -292,7 +293,7 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
       decoration: BoxDecoration(
         color: AppColors.bgCard,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isUsed ? AppColors.textMuted.withValues(alpha: 0.15) : AppColors.success.withValues(alpha: 0.2)),
+        border: Border.all(color: scannedToday ? AppColors.textMuted.withValues(alpha: 0.15) : AppColors.success.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -302,14 +303,14 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
             height: 40,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isUsed
+              color: scannedToday
                   ? AppColors.textMuted.withValues(alpha: 0.1)
                   : AppColors.success.withValues(alpha: 0.1),
             ),
             child: Icon(
-              isUsed ? Icons.check_circle : Icons.qr_code_2_rounded,
+              scannedToday ? Icons.check_circle : Icons.qr_code_2_rounded,
               size: 20,
-              color: isUsed ? AppColors.textMuted : AppColors.success,
+              color: scannedToday ? AppColors.textMuted : AppColors.success,
             ),
           ),
           const SizedBox(width: 12),
@@ -320,14 +321,27 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
                 Text(name, style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: isUsed ? AppColors.textMuted : Colors.white,
+                  color: scannedToday ? AppColors.textMuted : Colors.white,
                 )),
                 const SizedBox(height: 2),
                 Text(
                   qrCode.length > 20 ? '${qrCode.substring(0, 20)}...' : qrCode,
                   style: TextStyle(fontSize: 11, color: AppColors.textMuted.withValues(alpha: 0.6), fontFamily: 'monospace'),
                 ),
-                if (isUsed && scannedBy != null) ...[
+                if (totalDaysAttended > 0) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.date_range_rounded, size: 12, color: AppColors.accent2),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${language.translate('days_attended')}: $totalDaysAttended',
+                        style: const TextStyle(fontSize: 11, color: AppColors.accent2, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ],
+                if (scannedToday && scannedBy != null) ...[
                   const SizedBox(height: 4),
                   Row(
                     children: [
@@ -350,17 +364,17 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: isUsed
+              color: scannedToday
                   ? AppColors.textMuted.withValues(alpha: 0.1)
                   : AppColors.success.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-               isUsed ? language.translate('scanned') : language.translate('valid'),
+               scannedToday ? language.translate('scanned') : language.translate('valid'),
                style: TextStyle(
                  fontSize: 11,
                  fontWeight: FontWeight.w600,
-                 color: isUsed ? AppColors.textMuted : AppColors.success,
+                 color: scannedToday ? AppColors.textMuted : AppColors.success,
                ),
              ),
           ),

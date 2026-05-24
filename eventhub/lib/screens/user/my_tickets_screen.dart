@@ -184,7 +184,9 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
     final ticketId = ticket['id']?.toString() ?? '';
     final ticketNumber = ticket['ticket_number']?.toString() ?? ticketId;
     final status = ticket['status']?.toString() ?? 'active';
-    final isUsed = status == 'used';
+    final scannedToday = ticket['scanned_today'] ?? false;
+    final totalDaysAttended = ticket['total_days_attended'] ?? 0;
+    final isUsed = scannedToday;
 
     final dateStr = event['start_time'];
     DateTime dt;
@@ -251,6 +253,19 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
                           Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white), maxLines: 2, overflow: TextOverflow.ellipsis),
                           const SizedBox(height: 4),
                           Text('Date: $dateDisplay', style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.8))),
+                          if (totalDaysAttended > 0) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Icon(Icons.date_range_rounded, size: 14, color: AppColors.accent2),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${language.translate('days_attended')}: $totalDaysAttended',
+                                  style: const TextStyle(fontSize: 13, color: AppColors.accent2, fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
+                          ],
                           const SizedBox(height: 16),
                           ElevatedButton(
                             onPressed: () {

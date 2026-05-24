@@ -44,7 +44,7 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
         _participants = data;
         _filteredParticipants = data;
         _totalCount = data.length;
-        _attendedCount = data.where((t) => t['status'] == 'used').length;
+        _attendedCount = data.where((t) => t['scanned_today'] == true).length;
         _isLoading = false;
       });
     }
@@ -180,7 +180,8 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
     final email = user?['email'] ?? '';
     final avatar = user?['avatar'] ?? user?['image'];
     final initial = userName.isNotEmpty ? userName[0].toUpperCase() : '?';
-    final isUsed = ticket['status'] == 'used';
+    final scannedToday = ticket['scanned_today'] ?? false;
+    final totalDaysAttended = ticket['total_days_attended'] ?? 0;
     final qrCode = ticket['qr_code'] ?? 'N/A';
 
     return Container(
@@ -221,19 +222,32 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
                    '${Provider.of<LanguageProvider>(context, listen: false).translate('code_label')} $qrCode',
                    style: const TextStyle(color: AppColors.accent2, fontSize: 12),
                  ),
+                if (totalDaysAttended > 0) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.date_range_rounded, size: 12, color: AppColors.accent2),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${Provider.of<LanguageProvider>(context, listen: false).translate('days_attended')}: $totalDaysAttended',
+                        style: const TextStyle(color: AppColors.accent2, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ],
                ],
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: isUsed ? AppColors.success.withValues(alpha: 0.2) : AppColors.warning.withValues(alpha: 0.2),
+              color: scannedToday ? AppColors.success.withValues(alpha: 0.2) : AppColors.warning.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
              child: Text(
-               isUsed ? Provider.of<LanguageProvider>(context, listen: false).translate('attended') : Provider.of<LanguageProvider>(context, listen: false).translate('pending'),
+               scannedToday ? Provider.of<LanguageProvider>(context, listen: false).translate('attended') : Provider.of<LanguageProvider>(context, listen: false).translate('pending'),
                style: TextStyle(
-                 color: isUsed ? AppColors.success : AppColors.warning,
+                 color: scannedToday ? AppColors.success : AppColors.warning,
                  fontWeight: FontWeight.bold,
                  fontSize: 12,
                ),

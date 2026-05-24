@@ -308,6 +308,9 @@ class LanguageProvider with ChangeNotifier {
     'deadline_passed_msg': 'Deadline passed (closed 30 days before start)',
     'unlimited': 'Unlimited',
     'unlimited_ar': 'مفتوح',
+    'days_attended': 'Days Attended',
+    'scanned_today': 'Scanned Today',
+    'not_scanned_today': 'Not Scanned Today',
   };
 
   static const Map<String, String> _arabicStrings = {
@@ -575,5 +578,8 @@ class LanguageProvider with ChangeNotifier {
     'exhibition_registration_closed': 'باب الاشتراك مغلق',
     'deadline_passed_msg': 'انتهى الموعد النهائي (يغلق قبل الفعالية بـ 30 يوماً)',
     'unlimited': 'مفتوح',
+    'days_attended': 'أيام الحضور',
+    'scanned_today': 'تم المسح اليوم',
+    'not_scanned_today': 'لم يمسح اليوم',
   };
 }
