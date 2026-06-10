@@ -242,6 +242,7 @@ class LanguageProvider with ChangeNotifier {
     'invalid_credentials': 'Invalid credentials',
     'invalid_email': 'Invalid email',
     'wrong_password': 'Wrong password',
+    'email_already_taken': 'The email has already been taken',
     'login_failed': 'Login failed',
     'premium_experiences': 'Premium Event Experiences',
 
@@ -517,6 +518,7 @@ class LanguageProvider with ChangeNotifier {
     'invalid_credentials': 'بيانات الاعتماد غير صحيحة',
     'invalid_email': 'البريد الإلكتروني غير صحيح',
     'wrong_password': 'كلمة مرور خاطئة',
+    'email_already_taken': 'هذا البريد الإلكتروني مستخدم بالفعل',
     'login_failed': 'فشل تسجيل الدخول',
     'premium_experiences': 'تجارب فعاليات استثنائية',
 

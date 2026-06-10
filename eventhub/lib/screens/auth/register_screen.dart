@@ -63,7 +63,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = false);
 
     if (error != null) {
-      _showError(error);
+      final localized = _localizeError(error, language);
+      _showError(localized);
     } else {
       Widget destination;
       if (_selectedRole == 'assistant') {
@@ -76,6 +77,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
         (route) => false,
       );
     }
+  }
+
+  String _localizeError(String error, LanguageProvider language) {
+    final lower = error.toLowerCase();
+    if ((lower.contains('email') && lower.contains('taken')) ||
+        (lower.contains('email') && lower.contains('exists')) ||
+        lower.contains('البريد الإلكتروني') && lower.contains('مستخدم') ||
+        lower.contains('البريد الإلكتروني') && lower.contains('محجوز') ||
+        lower.contains('تم استخدام') && lower.contains('البريد')) {
+      return language.translate('email_already_taken');
+    }
+    if (lower.contains('invalid email') || lower.contains('البريد الإلكتروني غير صحيح')) {
+      return language.translate('invalid_email');
+    }
+    return error;
   }
 
   void _showError(String msg) {
