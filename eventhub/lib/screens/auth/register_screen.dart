@@ -88,7 +88,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         lower.contains('تم استخدام') && lower.contains('البريد')) {
       return language.translate('email_already_taken');
     }
-    if (lower.contains('invalid email') || lower.contains('البريد الإلكتروني غير صحيح')) {
+    if (lower.contains('invalid email') ||
+        lower.contains('البريد الإلكتروني غير صحيح')) {
       return language.translate('invalid_email');
     }
     return error;
@@ -130,7 +131,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [AppColors.accent.withValues(alpha: 0.15), Colors.transparent],
+                  colors: [
+                    AppColors.accent.withValues(alpha: 0.15),
+                    Colors.transparent,
+                  ],
                 ),
               ),
             ),
@@ -148,7 +152,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 20,
+                ),
                 child: Column(
                   children: [
                     SizedBox(
@@ -157,17 +164,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Image.asset(
                         'assets/images/logo.png',
                         fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => const Center(),
+                        errorBuilder:
+                            (context, error, stackTrace) => const Center(),
                       ),
                     ),
                     const SizedBox(height: 24),
                     const Text(
                       'EventHub',
-                      style: TextStyle(fontSize: 36, fontWeight: FontWeight.w900, letterSpacing: -1),
+                      style: TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -1,
+                      ),
                     ),
                     Text(
                       language.translate('create_premium_account'),
-                      style: const TextStyle(fontSize: 14, color: AppColors.textMuted, letterSpacing: 1),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textMuted,
+                        letterSpacing: 1,
+                      ),
                     ),
                     const SizedBox(height: 24),
 
@@ -181,8 +197,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       child: Row(
                         children: [
-                          _buildRoleTab(language.translate('user_role'), Icons.person_rounded, 'user'),
-                          _buildRoleTab(language.translate('assistant_role'), Icons.qr_code_scanner_rounded, 'assistant'),
+                          _buildRoleTab(
+                            language.translate('user_role'),
+                            Icons.person_rounded,
+                            'user',
+                          ),
+                          _buildRoleTab(
+                            language.translate('assistant_role'),
+                            Icons.qr_code_scanner_rounded,
+                            'assistant',
+                          ),
                         ],
                       ),
                     ),
@@ -196,19 +220,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         borderRadius: BorderRadius.circular(28),
                         border: Border.all(color: AppColors.border),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 40, offset: const Offset(0, 20)),
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            blurRadius: 40,
+                            offset: const Offset(0, 20),
+                          ),
                         ],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          _buildInputField(controller: _nameCtrl, hint: language.translate('full_name_label'), icon: Icons.person_outline_rounded),
+                          _buildInputField(
+                            controller: _nameCtrl,
+                            hint: language.translate('full_name_label'),
+                            icon: Icons.person_outline_rounded,
+                          ),
                           const SizedBox(height: 16),
-                          _buildInputField(controller: _emailCtrl, hint: language.translate('email_label'), icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress),
+                          _buildInputField(
+                            controller: _emailCtrl,
+                            hint: language.translate('email_label'),
+                            icon: Icons.email_outlined,
+                            keyboardType: TextInputType.emailAddress,
+                          ),
                           const SizedBox(height: 16),
-                          _buildInputField(controller: _passCtrl, hint: language.translate('password_label'), icon: Icons.lock_outline_rounded, isPassword: true),
+                          _buildInputField(
+                            controller: _passCtrl,
+                            hint: language.translate('password_label'),
+                            icon: Icons.lock_outline_rounded,
+                            isPassword: true,
+                          ),
                           const SizedBox(height: 16),
-                          _buildInputField(controller: _confirmCtrl, hint: language.translate('confirm_password_label'), icon: Icons.lock_reset_rounded, isPassword: true, isConfirm: true),
+                          _buildInputField(
+                            controller: _confirmCtrl,
+                            hint: language.translate('confirm_password_label'),
+                            icon: Icons.lock_reset_rounded,
+                            isPassword: true,
+                            isConfirm: true,
+                          ),
                           const SizedBox(height: 32),
                           GestureDetector(
                             onTap: _register,
@@ -218,13 +266,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 gradient: AppColors.accentGradient,
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
-                                  BoxShadow(color: AppColors.accent.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4)),
+                                  BoxShadow(
+                                    color: AppColors.accent.withValues(
+                                      alpha: 0.3,
+                                    ),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
                                 ],
                               ),
                               child: Center(
-                                child: _isLoading
-                                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                  : Text(language.translate('create_account_btn'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                                child:
+                                    _isLoading
+                                        ? const SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                        : Text(
+                                          language.translate(
+                                            'create_account_btn',
+                                          ),
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
                               ),
                             ),
                           ),
@@ -237,10 +308,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(language.translate('already_have_account_msg'), style: const TextStyle(color: AppColors.textMuted)),
+                        Text(
+                          language.translate('already_have_account_msg'),
+                          style: const TextStyle(color: AppColors.textMuted),
+                        ),
                         GestureDetector(
                           onTap: () => Navigator.pop(context),
-                          child: Text(language.translate('sign_in'), style: const TextStyle(color: AppColors.accent2, fontWeight: FontWeight.bold)),
+                          child: Text(
+                            language.translate('sign_in'),
+                            style: const TextStyle(
+                              color: AppColors.accent2,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -270,21 +350,40 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
       child: TextField(
         controller: controller,
-        obscureText: isPassword ? (isConfirm ? _obscureConfirm : _obscurePass) : false,
+        obscureText:
+            isPassword ? (isConfirm ? _obscureConfirm : _obscurePass) : false,
         keyboardType: keyboardType,
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(color: AppColors.textMuted.withValues(alpha: 0.4), fontSize: 14),
+          hintStyle: TextStyle(
+            color: AppColors.textMuted.withValues(alpha: 0.4),
+            fontSize: 14,
+          ),
           prefixIcon: Icon(icon, color: AppColors.textMuted, size: 20),
-          suffixIcon: isPassword ? IconButton(
-            icon: Icon((isConfirm ? _obscureConfirm : _obscurePass) ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: AppColors.textMuted, size: 18),
-            onPressed: () => setState(() {
-              if (isConfirm) _obscureConfirm = !_obscureConfirm;
-              else _obscurePass = !_obscurePass;
-            }),
-          ) : null,
+          suffixIcon:
+              isPassword
+                  ? IconButton(
+                    icon: Icon(
+                      (isConfirm ? _obscureConfirm : _obscurePass)
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: AppColors.textMuted,
+                      size: 18,
+                    ),
+                    onPressed:
+                        () => setState(() {
+                          if (isConfirm)
+                            _obscureConfirm = !_obscureConfirm;
+                          else
+                            _obscurePass = !_obscurePass;
+                        }),
+                  )
+                  : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
         ),
       ),
     );
@@ -302,14 +401,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
           decoration: BoxDecoration(
             gradient: isSelected ? AppColors.accentGradient : null,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: isSelected
-                ? [BoxShadow(color: AppColors.accent.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))]
-                : null,
+            boxShadow:
+                isSelected
+                    ? [
+                      BoxShadow(
+                        color: AppColors.accent.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                    : null,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 18, color: isSelected ? Colors.white : AppColors.textMuted),
+              Icon(
+                icon,
+                size: 18,
+                color: isSelected ? Colors.white : AppColors.textMuted,
+              ),
               const SizedBox(width: 8),
               Text(
                 label,

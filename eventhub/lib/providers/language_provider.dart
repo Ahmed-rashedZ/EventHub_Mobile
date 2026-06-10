@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LanguageProvider with ChangeNotifier {
-  Locale _locale = PlatformDispatcher.instance.locale.languageCode == 'en'
-      ? const Locale('en')
-      : const Locale('ar');
+  Locale _locale =
+      PlatformDispatcher.instance.locale.languageCode == 'en'
+          ? const Locale('en')
+          : const Locale('ar');
   Locale get locale => _locale;
 
   static const String _prefKey = 'selected_language';
@@ -113,7 +114,8 @@ class LanguageProvider with ChangeNotifier {
     'ended': 'Ended',
     'open_in_maps': 'Open in Maps',
     'forgot_password_title': 'Forgot Password',
-    'forgot_password_msg': 'Enter your email address to receive a password reset code.',
+    'forgot_password_msg':
+        'Enter your email address to receive a password reset code.',
     'email_label': 'EMAIL ADDRESS',
     'send_reset_code': 'Send Reset Code',
     'enter_email_error': 'Please enter your email address',
@@ -210,7 +212,8 @@ class LanguageProvider with ChangeNotifier {
     'scan_entrance': 'Scan at the entrance',
     'ticket_used': 'TICKET USED',
     'valid_ticket': 'VALID TICKET',
-    'qr_safe_msg': 'Keep this QR code safe. You will need it to enter the event.',
+    'qr_safe_msg':
+        'Keep this QR code safe. You will need it to enter the event.',
     'ticket_label': 'TICKET',
     'passwords_not_match': 'Passwords do not match',
     'password_updated': 'Password updated successfully!',
@@ -229,7 +232,8 @@ class LanguageProvider with ChangeNotifier {
     'rating_success': 'Rating submitted successfully!',
     'based_on': 'Based on',
     'no_reviews_msg': 'No reviews yet for this event.',
-    'rating_locked_msg': 'You must attend and scan your ticket to leave a review.',
+    'rating_locked_msg':
+        'You must attend and scan your ticket to leave a review.',
     'share_event': 'Share Event',
     'share_msg': 'Check out this event on EventHub!',
     'sign_in': 'Sign In',
@@ -314,8 +318,18 @@ class LanguageProvider with ChangeNotifier {
     'date_time_label': 'Date & Time',
     'venue_label': 'Venue',
     'at': 'at',
-    'jan': 'Jan', 'feb': 'Feb', 'mar': 'Mar', 'apr': 'Apr', 'may': 'May', 'jun': 'Jun',
-    'jul': 'Jul', 'aug': 'Aug', 'sep': 'Sep', 'oct': 'Oct', 'nov': 'Nov', 'dec': 'Dec',
+    'jan': 'Jan',
+    'feb': 'Feb',
+    'mar': 'Mar',
+    'apr': 'Apr',
+    'may': 'May',
+    'jun': 'Jun',
+    'jul': 'Jul',
+    'aug': 'Aug',
+    'sep': 'Sep',
+    'oct': 'Oct',
+    'nov': 'Nov',
+    'dec': 'Dec',
     'participating_companies': 'Participating Companies',
     'booth': 'Booth',
     'apply_for_exhibition': 'Apply for Exhibition',
@@ -454,7 +468,8 @@ class LanguageProvider with ChangeNotifier {
     'ended': 'انتهى',
     'open_in_maps': 'فتح في الخرائط',
     'forgot_password_title': 'نسيت كلمة المرور',
-    'forgot_password_msg': 'أدخل عنوان بريدك الإلكتروني لتلقي رمز إعادة تعيين كلمة المرور.',
+    'forgot_password_msg':
+        'أدخل عنوان بريدك الإلكتروني لتلقي رمز إعادة تعيين كلمة المرور.',
     'email_label': 'البريد الإلكتروني',
     'send_reset_code': 'إرسال رمز إعادة التعيين',
     'enter_email_error': 'يرجى إدخال عنوان بريدك الإلكتروني',
@@ -474,7 +489,8 @@ class LanguageProvider with ChangeNotifier {
     'reset_password_msg': 'أدخل كلمة المرور الجديدة أدناه',
     'new_password_label': 'كلمة المرور الجديدة',
     'reset_password_btn': 'إعادة تعيين كلمة المرور',
-    'password_reset_success': 'تم إعادة تعيين كلمة المرور بنجاح! يرجى تسجيل الدخول.',
+    'password_reset_success':
+        'تم إعادة تعيين كلمة المرور بنجاح! يرجى تسجيل الدخول.',
     'passwords_dont_match': 'كلمات المرور غير متطابقة',
     'password_min_length': 'يجب أن تكون كلمة المرور 8 أحرف على الأقل',
     'confirm': 'تأكيد',
@@ -505,7 +521,8 @@ class LanguageProvider with ChangeNotifier {
     'rating_success': 'تم إرسال التقييم والمراجعة بنجاح!',
     'based_on': 'بناءً على',
     'no_reviews_msg': 'لا توجد مراجعات لهذه الفعالية بعد.',
-    'rating_locked_msg': 'يجب حضور الفعالية ومسح التذكرة لتتمكن من التقييم والتعليق.',
+    'rating_locked_msg':
+        'يجب حضور الفعالية ومسح التذكرة لتتمكن من التقييم والتعليق.',
     'share_event': 'مشاركة الفعالية',
     'share_msg': 'شاهد هذه الفعالية على EventHub!',
     'sign_in': 'تسجيل الدخول',
@@ -590,13 +607,24 @@ class LanguageProvider with ChangeNotifier {
     'date_time_label': 'التاريخ والوقت',
     'venue_label': 'القاعة',
     'at': 'في',
-    'jan': 'يناير', 'feb': 'فبراير', 'mar': 'مارس', 'apr': 'أبريل', 'may': 'مايو', 'jun': 'يونيو',
-    'jul': 'يوليو', 'aug': 'أغسطس', 'sep': 'سبتمبر', 'oct': 'أكتوبر', 'nov': 'نوفمبر', 'dec': 'ديسمبر',
+    'jan': 'يناير',
+    'feb': 'فبراير',
+    'mar': 'مارس',
+    'apr': 'أبريل',
+    'may': 'مايو',
+    'jun': 'يونيو',
+    'jul': 'يوليو',
+    'aug': 'أغسطس',
+    'sep': 'سبتمبر',
+    'oct': 'أكتوبر',
+    'nov': 'نوفمبر',
+    'dec': 'ديسمبر',
     'participating_companies': 'الشركات المشاركة',
     'booth': 'جناح',
     'apply_for_exhibition': 'طلب مشاركة في معرض',
     'exhibition_registration_closed': 'باب الاشتراك مغلق',
-    'deadline_passed_msg': 'انتهى الموعد النهائي (يغلق قبل الفعالية بـ 30 يوماً)',
+    'deadline_passed_msg':
+        'انتهى الموعد النهائي (يغلق قبل الفعالية بـ 30 يوماً)',
     'unlimited': 'مفتوح',
     'days_attended': 'أيام الحضور',
     'scanned_today': 'تم المسح اليوم',
