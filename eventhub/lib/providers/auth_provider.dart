@@ -16,6 +16,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   Map<String, dynamic>? get user => _user;
   String? get role => _user?['role'];
+  bool get isAssistant => role?.toLowerCase() == 'assistant';
   String get userName => _user?['name'] ?? 'User';
   String get userEmail => _user?['email'] ?? '';
   int get userId => _user?['id'] ?? 0;
@@ -94,12 +95,15 @@ class AuthProvider extends ChangeNotifier {
 
   Future<String?> register(String name, String email, String password, {String role = 'User'}) async {
     try {
-      final res = await _api.post('/register', {
+      final payload = {
         'name': name,
         'email': email,
         'password': password,
-        'role': role,
-      });
+      };
+      if (role.toLowerCase() == 'assistant') {
+        payload['role'] = 'Assistant';
+      }
+      final res = await _api.post('/register', payload);
 
       final data = jsonDecode(res.body);
       if (res.statusCode == 200 || res.statusCode == 201) {

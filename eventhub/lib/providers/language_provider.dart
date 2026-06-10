@@ -1,8 +1,11 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LanguageProvider with ChangeNotifier {
-  Locale _locale = const Locale('ar');
+  Locale _locale = PlatformDispatcher.instance.locale.languageCode == 'en'
+      ? const Locale('en')
+      : const Locale('ar');
   Locale get locale => _locale;
 
   static const String _prefKey = 'selected_language';
@@ -16,6 +19,13 @@ class LanguageProvider with ChangeNotifier {
     final String? languageCode = prefs.getString(_prefKey);
     if (languageCode != null) {
       _locale = Locale(languageCode);
+      notifyListeners();
+      return;
+    }
+
+    final systemLanguageCode = PlatformDispatcher.instance.locale.languageCode;
+    if (systemLanguageCode == 'en' || systemLanguageCode == 'ar') {
+      _locale = Locale(systemLanguageCode);
       notifyListeners();
     }
   }
@@ -229,6 +239,10 @@ class LanguageProvider with ChangeNotifier {
     'dont_have_account': "Don't have an account? ",
     'create_account': 'Create Account',
     'please_fill_all_fields': 'Please fill all fields',
+    'invalid_credentials': 'Invalid credentials',
+    'invalid_email': 'Invalid email',
+    'wrong_password': 'Wrong password',
+    'login_failed': 'Login failed',
     'premium_experiences': 'Premium Event Experiences',
 
     // Assistant Module
@@ -500,6 +514,10 @@ class LanguageProvider with ChangeNotifier {
     'dont_have_account': 'ليس لديك حساب؟ ',
     'create_account': 'إنشاء حساب',
     'please_fill_all_fields': 'الرجاء تعبئة جميع الحقول',
+    'invalid_credentials': 'بيانات الاعتماد غير صحيحة',
+    'invalid_email': 'البريد الإلكتروني غير صحيح',
+    'wrong_password': 'كلمة مرور خاطئة',
+    'login_failed': 'فشل تسجيل الدخول',
     'premium_experiences': 'تجارب فعاليات استثنائية',
 
     // Assistant Module

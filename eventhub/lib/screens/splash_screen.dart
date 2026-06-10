@@ -55,7 +55,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     Widget destination;
     if (auth.isAuthenticated) {
-      if (auth.role == 'Assistant') {
+      if (auth.isAssistant) {
         destination = const AssistantMainNavigation();
       } else {
         destination = const MainNavigation();

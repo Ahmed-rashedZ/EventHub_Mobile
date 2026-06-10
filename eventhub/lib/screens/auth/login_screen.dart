@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../utils/constants.dart';
-import '../../widgets/gradient_button.dart';
 import '../user/main_navigation.dart';
 import '../assistant/assistant_main_navigation.dart';
 import 'forgot_password_screen.dart';
@@ -22,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   final _passCtrl = TextEditingController();
   bool _isLoading = false;
   bool _obscurePass = true;
+  String? _passwordError;
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
@@ -50,13 +50,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   void _login() async {
     final email = _emailCtrl.text.trim();
     final pass = _passCtrl.text.trim();
+    final language = Provider.of<LanguageProvider>(context, listen: false);
 
     if (email.isEmpty || pass.isEmpty) {
-      _showError(Provider.of<LanguageProvider>(context, listen: false).translate('please_fill_all_fields'));
+      _showError(language.translate('please_fill_all_fields'));
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _passwordError = null;
+    });
 
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final error = await auth.login(email, pass);
@@ -65,14 +69,36 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     setState(() => _isLoading = false);
 
     if (error != null) {
-      _showError(error);
+      final localized = _localizeError(error, language);
+      if (_isPasswordError(error) || localized == language.translate('wrong_password')) {
+        setState(() {
+          _passwordError = language.translate('wrong_password');
+        });
+      }
+      _showError(localized);
     } else {
-      if (auth.role == 'Assistant') {
+      if (auth.isAssistant) {
         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const AssistantMainNavigation()));
       } else {
         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const MainNavigation()));
       }
     }
+  }
+
+  bool _isPasswordError(String error) {
+    final lower = error.toLowerCase();
+    return lower.contains('password') || lower.contains('wrong password') || lower.contains('invalid credentials') || lower.contains('credentials') || lower.contains('data invalid') || lower.contains('كلمة المرور') || lower.contains('كلمة السر') || lower.contains('بيانات الاعتماد') || lower.contains('بيانات الدخل');
+  }
+
+  String _localizeError(String error, LanguageProvider language) {
+    final lower = error.toLowerCase();
+    if (lower.contains('invalid credentials') || lower.contains('credentials') || lower.contains('data invalid') || lower.contains('بيانات الاعتماد') || lower.contains('بيانات الدخل')) {
+      return language.translate('wrong_password');
+    }
+    if (lower.contains('password') || lower.contains('wrong password') || lower.contains('كلمة المرور') || lower.contains('كلمة السر')) {
+      return language.translate('wrong_password');
+    }
+    return error;
   }
 
   void _showError(String msg) {
@@ -198,6 +224,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                 hint: language.translate('password'),
                                 icon: Icons.lock_outline_rounded,
                                 isPassword: true,
+                                errorText: _passwordError,
+                                onChanged: (_) {
+                                  if (_passwordError != null) setState(() => _passwordError = null);
+                                },
                               ),
                               const SizedBox(height: 12),
                               Align(
@@ -264,29 +294,42 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     required IconData icon,
     bool isPassword = false,
     TextInputType? keyboardType,
+    String? errorText,
+    ValueChanged<String>? onChanged,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: TextField(
-        controller: controller,
-        obscureText: isPassword && _obscurePass,
-        keyboardType: keyboardType,
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: TextStyle(color: AppColors.textMuted.withValues(alpha: 0.4), fontSize: 14),
-          prefixIcon: Icon(icon, color: AppColors.textMuted, size: 20),
-          suffixIcon: isPassword ? IconButton(
-            icon: Icon(_obscurePass ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: AppColors.textMuted, size: 18),
-            onPressed: () => setState(() => _obscurePass = !_obscurePass),
-          ) : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    final hasError = errorText != null && errorText.isNotEmpty;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: hasError ? AppColors.danger : AppColors.border),
+          ),
+          child: TextField(
+            controller: controller,
+            obscureText: isPassword && _obscurePass,
+            keyboardType: keyboardType,
+            onChanged: onChanged,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(color: AppColors.textMuted.withValues(alpha: 0.4), fontSize: 14),
+              prefixIcon: Icon(icon, color: AppColors.textMuted, size: 20),
+              suffixIcon: isPassword ? IconButton(
+                icon: Icon(_obscurePass ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: AppColors.textMuted, size: 18),
+                onPressed: () => setState(() => _obscurePass = !_obscurePass),
+              ) : null,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            ),
+          ),
         ),
-      ),
+        if (hasError) ...[
+          const SizedBox(height: 6),
+          Text(errorText, style: const TextStyle(color: AppColors.danger, fontSize: 12)),
+        ],
+      ],
     );
   }
 }

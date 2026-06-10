@@ -23,7 +23,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _obscurePass = true;
   bool _obscureConfirm = true;
-  String _selectedRole = 'User'; // 'User' or 'Assistant'
+  String _selectedRole = 'user'; // 'user' or 'assistant'
 
   @override
   void dispose() {
@@ -39,17 +39,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final email = _emailCtrl.text.trim();
     final pass = _passCtrl.text.trim();
     final confirm = _confirmCtrl.text.trim();
+    final language = Provider.of<LanguageProvider>(context, listen: false);
 
     if (name.isEmpty || email.isEmpty || pass.isEmpty || confirm.isEmpty) {
-      _showError('Please fill all fields');
+      _showError(language.translate('please_fill_all_fields'));
       return;
     }
     if (pass.length < 8) {
-      _showError('Password must be at least 8 characters');
+      _showError(language.translate('password_min_length'));
       return;
     }
     if (pass != confirm) {
-      _showError('Passwords do not match');
+      _showError(language.translate('passwords_dont_match'));
       return;
     }
 
@@ -65,7 +66,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _showError(error);
     } else {
       Widget destination;
-      if (_selectedRole == 'Assistant') {
+      if (_selectedRole == 'assistant') {
         destination = const AssistantMainNavigation();
       } else {
         destination = const MainNavigation();
@@ -164,8 +165,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       child: Row(
                         children: [
-                          _buildRoleTab(language.translate('user_role'), Icons.person_rounded, 'User'),
-                          _buildRoleTab(language.translate('assistant_role'), Icons.qr_code_scanner_rounded, 'Assistant'),
+                          _buildRoleTab(language.translate('user_role'), Icons.person_rounded, 'user'),
+                          _buildRoleTab(language.translate('assistant_role'), Icons.qr_code_scanner_rounded, 'assistant'),
                         ],
                       ),
                     ),

@@ -616,12 +616,16 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   );
                 }),
               ],
-              GradientButton(
-                text: _isBooked ? '${language.translate('already_booked')} ✓' : language.translate('book_now'),
+                  GradientButton(
+                text: _isBooked
+                    ? '${language.translate('already_booked')} ✓'
+                    : (isFull ? language.translate('sold_out') : language.translate('book_now')),
                 isLoading: _isBooking,
-                onPressed: _isBooked ? () {} : _book,
-                icon: _isBooked ? Icons.check_circle : Icons.confirmation_number_outlined,
-                colors: _isBooked
+                onPressed: (_isBooked || isFull) ? null : _book,
+                icon: _isBooked
+                    ? Icons.check_circle
+                    : (isFull ? Icons.event_busy : Icons.confirmation_number_outlined),
+                colors: (_isBooked || isFull)
                     ? [AppColors.textMuted.withValues(alpha: 0.3), AppColors.textMuted.withValues(alpha: 0.3)]
                     : [AppColors.success, const Color(0xFF16A34A)],
               ),
