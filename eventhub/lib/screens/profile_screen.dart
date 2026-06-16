@@ -12,6 +12,7 @@ import 'auth/login_screen.dart';
 import 'user/settings_screen.dart';
 import 'user/main_navigation.dart';
 import '../providers/language_provider.dart';
+import 'assistant/assistant_main_navigation.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -153,12 +154,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(width: 16),
                         GestureDetector(
                           onTap: () {
-                            final navState = context.findAncestorStateOfType<MainNavigationState>();
-                            if (navState != null) {
-                              navState.setIndex(3); // Settings tab is index 3
-                            } else {
-                              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
+                            // Try to find MainNavigation context first
+                            final mainNavState = context.findAncestorStateOfType<MainNavigationState>();
+                            if (mainNavState != null) {
+                              mainNavState.setIndex(3); // Settings tab is index 3 in user app
+                              return;
                             }
+                            
+                            // Try to find AssistantMainNavigation context
+                            final assistantNavState = context.findAncestorStateOfType<AssistantMainNavigationState>();
+                            if (assistantNavState != null) {
+                              assistantNavState.setIndex(4); // Settings tab is index 4 in assistant app
+                              return;
+                            }
+                            
+                            // Fallback: push as a new route
+                            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
                           },
                           child: const Icon(Icons.settings_rounded, color: AppColors.textMuted, size: 26),
                         ),

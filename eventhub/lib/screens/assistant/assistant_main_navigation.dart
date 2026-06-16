@@ -9,6 +9,7 @@ import '../profile_screen.dart';
 import 'assistant_requests_screen.dart';
 import 'assistant_work_screen.dart';
 import 'assistant_history_screen.dart';
+import '../user/settings_screen.dart';
 import '../../services/fcm_service.dart';
 
 class AssistantMainNavigation extends StatefulWidget {
@@ -88,6 +89,7 @@ class AssistantMainNavigationState extends State<AssistantMainNavigation> {
     const AssistantRequestsScreen(),
     const AssistantHistoryScreen(),
     const ProfileScreen(),
+    const SettingsScreen(),
   ];
 
   @override
