@@ -141,13 +141,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     CircleAvatar(
                       radius: 18,
-                      backgroundImage: userImage != null
-                          ? NetworkImage(ApiConstants.buildImageUrl(userImage)!)
-                          : null,
+                      backgroundImage:
+                          userImage != null
+                              ? NetworkImage(
+                                ApiConstants.buildImageUrl(userImage)!,
+                              )
+                              : null,
                       backgroundColor: AppColors.accent.withValues(alpha: 0.1),
-                      child: userImage == null
-                          ? const Icon(Icons.person, size: 20)
-                          : null,
+                      child:
+                          userImage == null
+                              ? const Icon(Icons.person, size: 20)
+                              : null,
                     ),
                     Row(
                       children: [
@@ -155,23 +159,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         GestureDetector(
                           onTap: () {
                             // Try to find MainNavigation context first
-                            final mainNavState = context.findAncestorStateOfType<MainNavigationState>();
+                            final mainNavState =
+                                context
+                                    .findAncestorStateOfType<
+                                      MainNavigationState
+                                    >();
                             if (mainNavState != null) {
-                              mainNavState.setIndex(3); // Settings tab is index 3 in user app
+                              mainNavState.setIndex(
+                                3,
+                              ); // Settings tab is index 3 in user app
                               return;
                             }
-                            
+
                             // Try to find AssistantMainNavigation context
-                            final assistantNavState = context.findAncestorStateOfType<AssistantMainNavigationState>();
+                            final assistantNavState =
+                                context
+                                    .findAncestorStateOfType<
+                                      AssistantMainNavigationState
+                                    >();
                             if (assistantNavState != null) {
-                              assistantNavState.setIndex(4); // Settings tab is index 4 in assistant app
+                              assistantNavState.setIndex(
+                                4,
+                              ); // Settings tab is index 4 in assistant app
                               return;
                             }
-                            
+
                             // Fallback: push as a new route
-                            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const SettingsScreen(),
+                              ),
+                            );
                           },
-                          child: const Icon(Icons.settings_rounded, color: AppColors.textMuted, size: 26),
+                          child: const Icon(
+                            Icons.settings_rounded,
+                            color: AppColors.textMuted,
+                            size: 26,
+                          ),
                         ),
                       ],
                     ),
@@ -193,23 +217,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     child: CircleAvatar(
                       radius: 56,
-                      backgroundImage: userImage != null
-                          ? NetworkImage(ApiConstants.buildImageUrl(userImage)!)
-                          : null,
+                      backgroundImage:
+                          userImage != null
+                              ? NetworkImage(
+                                ApiConstants.buildImageUrl(userImage)!,
+                              )
+                              : null,
                       backgroundColor: AppColors.accent.withValues(alpha: 0.1),
-                      child: _isUploadingImage
-                          ? const CircularProgressIndicator(
-                              color: AppColors.accent,
-                            )
-                          : (userImage == null
-                                ? Text(
+                      child:
+                          _isUploadingImage
+                              ? const CircularProgressIndicator(
+                                color: AppColors.accent,
+                              )
+                              : (userImage == null
+                                  ? Text(
                                     name[0],
                                     style: const TextStyle(
                                       fontSize: 40,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   )
-                                : null),
+                                  : null),
                     ),
                   ),
                   Positioned(
@@ -261,7 +289,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.accent2.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.accent2.withValues(alpha: 0.2)),
+                        border: Border.all(
+                          color: AppColors.accent2.withValues(alpha: 0.2),
+                        ),
                       ),
                       child: const Icon(
                         Icons.edit_outlined,
@@ -287,9 +317,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: AppColors.bgCard,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: assistantProv.isAvailable
-                                ? AppColors.success.withValues(alpha: 0.3)
-                                : AppColors.border,
+                            color:
+                                assistantProv.isAvailable
+                                    ? AppColors.success.withValues(alpha: 0.3)
+                                    : AppColors.border,
                           ),
                         ),
                         child: Row(
@@ -297,18 +328,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: assistantProv.isAvailable
-                                    ? AppColors.success.withValues(alpha: 0.1)
-                                    : AppColors.textMuted.withValues(alpha: 0.1),
+                                color:
+                                    assistantProv.isAvailable
+                                        ? AppColors.success.withValues(
+                                          alpha: 0.1,
+                                        )
+                                        : AppColors.textMuted.withValues(
+                                          alpha: 0.1,
+                                        ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
                                 assistantProv.isAvailable
                                     ? Icons.visibility_rounded
                                     : Icons.visibility_off_rounded,
-                                color: assistantProv.isAvailable
-                                    ? AppColors.success
-                                    : AppColors.textMuted,
+                                color:
+                                    assistantProv.isAvailable
+                                        ? AppColors.success
+                                        : AppColors.textMuted,
                                 size: 22,
                               ),
                             ),
@@ -318,7 +355,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    language.translate('available_for_assistance'),
+                                    language.translate(
+                                      'available_for_assistance',
+                                    ),
                                     style: const TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
@@ -329,10 +368,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   Text(
                                     assistantProv.isAvailable
                                         ? language.translate('available_desc')
-                                        : language.translate('unavailable_desc'),
+                                        : language.translate(
+                                          'unavailable_desc',
+                                        ),
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: AppColors.textMuted.withValues(alpha: 0.7),
+                                      color: AppColors.textMuted.withValues(
+                                        alpha: 0.7,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -341,7 +384,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Switch(
                               value: assistantProv.isAvailable,
                               onChanged: (val) async {
-                                final error = await assistantProv.toggleAvailability(val);
+                                final error = await assistantProv
+                                    .toggleAvailability(val);
                                 if (error != null && context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
@@ -369,41 +413,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: auth.role == 'Assistant'
-                    ? Row(
-                        children: [
-                          _buildStatCard(
-                            icon: Icons.event_available_rounded,
-                            label: language.translate('events_assisted'),
-                            value: Provider.of<AssistantProvider>(context).workEvents.length.toString(),
-                            color: AppColors.accent,
-                          ),
-                          const SizedBox(width: 16),
-                          _buildStatCard(
-                            icon: Icons.qr_code_scanner_rounded,
-                            label: language.translate('tickets_scanned'),
-                            value: user?['attendance_logs_count']?.toString() ?? '0',
-                            color: AppColors.success,
-                          ),
-                        ],
-                      )
-                    : Row(
-                        children: [
-                          _buildStatCard(
-                            icon: Icons.local_activity_rounded,
-                            label: language.translate('tickets_booked'),
-                            value: ticketProv.myTickets.length.toString(),
-                            color: AppColors.accent,
-                          ),
-                          const SizedBox(width: 16),
-                          _buildStatCard(
-                            icon: Icons.event_available_rounded,
-                            label: language.translate('events_attended'),
-                            value: ticketProv.totalAttended.toString(),
-                            color: AppColors.success,
-                          ),
-                        ],
-                      ),
+                child:
+                    auth.role == 'Assistant'
+                        ? Row(
+                          children: [
+                            _buildStatCard(
+                              icon: Icons.event_available_rounded,
+                              label: language.translate('events_assisted'),
+                              value:
+                                  Provider.of<AssistantProvider>(
+                                    context,
+                                  ).workEvents.length.toString(),
+                              color: AppColors.accent,
+                            ),
+                            const SizedBox(width: 16),
+                            _buildStatCard(
+                              icon: Icons.qr_code_scanner_rounded,
+                              label: language.translate('tickets_scanned'),
+                              value:
+                                  user?['attendance_logs_count']?.toString() ??
+                                  '0',
+                              color: AppColors.success,
+                            ),
+                          ],
+                        )
+                        : Row(
+                          children: [
+                            _buildStatCard(
+                              icon: Icons.local_activity_rounded,
+                              label: language.translate('tickets_booked'),
+                              value: ticketProv.myTickets.length.toString(),
+                              color: AppColors.accent,
+                            ),
+                            const SizedBox(width: 16),
+                            _buildStatCard(
+                              icon: Icons.event_available_rounded,
+                              label: language.translate('events_attended'),
+                              value: ticketProv.totalAttended.toString(),
+                              color: AppColors.success,
+                            ),
+                          ],
+                        ),
               ),
               const SizedBox(height: 32),
 
@@ -419,31 +469,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Container(
                     width: double.infinity,
-                    padding: _selectedInterests.isEmpty
-                        ? const EdgeInsets.all(20)
-                        : const EdgeInsets.all(12),
+                    padding:
+                        _selectedInterests.isEmpty
+                            ? const EdgeInsets.all(20)
+                            : const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: AppColors.bgCard,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: AppColors.border),
                     ),
-                    child: _selectedInterests.isEmpty
-                        ? Center(
-                            child: Text(
-                              language.translate('no_interests'),
-                              style: const TextStyle(
-                                color: AppColors.textMuted,
-                                fontSize: 14,
+                    child:
+                        _selectedInterests.isEmpty
+                            ? Center(
+                              child: Text(
+                                language.translate('no_interests'),
+                                style: const TextStyle(
+                                  color: AppColors.textMuted,
+                                  fontSize: 14,
+                                ),
                               ),
+                            )
+                            : Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children:
+                                  _selectedInterests
+                                      .map(
+                                        (interest) =>
+                                            _buildInterestTag(interest),
+                                      )
+                                      .toList(),
                             ),
-                          )
-                        : Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: _selectedInterests
-                                .map((interest) => _buildInterestTag(interest))
-                                .toList(),
-                          ),
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -720,120 +776,142 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.bgCard,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-        title: Text(
-          language.translate('edit_profile'),
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
-        ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _dialogLabel(language.translate('full_name')),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: nameCtrl,
-                  decoration: _dialogInput(language.translate('your_full_name')),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(
-                language.translate('cancel'),
-                style: const TextStyle(color: AppColors.textMuted),
-              ),
-            ),
-            TextButton(
-              onPressed: isLoading
-                  ? null
-                  : () async {
-                      setDialogState(() => isLoading = true);
-                      try {
-                        final api = ApiService();
-                        final body = <String, dynamic>{
-                          'name': nameCtrl.text.trim(),
-                          'email': auth.userEmail,
-                        };
-                        final res = await api.put('/profile', body);
-                        final data = jsonDecode(res.body);
-                        if (res.statusCode == 200) {
-                          // Update local user data
-                          await auth.refreshUser();
-                          if (ctx.mounted) Navigator.pop(ctx);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.check_circle,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(language.translate('profile_updated')),
-                                  ],
-                                ),
-                                backgroundColor: AppColors.success,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                margin: const EdgeInsets.all(16),
-                              ),
-                            );
-                          }
-                        } else {
-                          final msg = data['message'] ?? 'Update failed';
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(msg),
-                                backgroundColor: AppColors.danger,
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          }
-                        }
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Error: $e'),
-                              backgroundColor: AppColors.danger,
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        }
-                      }
-                      setDialogState(() => isLoading = false);
-                    },
-              child: isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(
-                      language.translate('update'),
-                      style: const TextStyle(
-                        color: AppColors.accent,
-                        fontWeight: FontWeight.w700,
+      builder:
+          (ctx) => StatefulBuilder(
+            builder:
+                (ctx, setDialogState) => AlertDialog(
+                  backgroundColor: AppColors.bgCard,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  title: Text(
+                    language.translate('edit_profile'),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
+                    ),
+                  ),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _dialogLabel(language.translate('full_name')),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: nameCtrl,
+                          decoration: _dialogInput(
+                            language.translate('your_full_name'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: Text(
+                        language.translate('cancel'),
+                        style: const TextStyle(color: AppColors.textMuted),
                       ),
                     ),
-            ),
-          ],
-        ),
-      ),
+                    TextButton(
+                      onPressed:
+                          isLoading
+                              ? null
+                              : () async {
+                                setDialogState(() => isLoading = true);
+                                try {
+                                  final api = ApiService();
+                                  final body = <String, dynamic>{
+                                    'name': nameCtrl.text.trim(),
+                                    'email': auth.userEmail,
+                                  };
+                                  final res = await api.put('/profile', body);
+                                  final data = jsonDecode(res.body);
+                                  if (res.statusCode == 200) {
+                                    // Update local user data
+                                    await auth.refreshUser();
+                                    if (ctx.mounted) Navigator.pop(ctx);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Row(
+                                            children: [
+                                              const Icon(
+                                                Icons.check_circle,
+                                                color: Colors.white,
+                                                size: 20,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                language.translate(
+                                                  'profile_updated',
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          backgroundColor: AppColors.success,
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+                                          margin: const EdgeInsets.all(16),
+                                        ),
+                                      );
+                                    }
+                                  } else {
+                                    final msg =
+                                        data['message'] ?? 'Update failed';
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(msg),
+                                          backgroundColor: AppColors.danger,
+                                          behavior: SnackBarBehavior.floating,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Error: $e'),
+                                        backgroundColor: AppColors.danger,
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  }
+                                }
+                                setDialogState(() => isLoading = false);
+                              },
+                      child:
+                          isLoading
+                              ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : Text(
+                                language.translate('update'),
+                                style: const TextStyle(
+                                  color: AppColors.accent,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                    ),
+                  ],
+                ),
+          ),
     );
   }
 
@@ -871,7 +949,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-
   // ─── Interests Dialog ──────────────────────
   Future<void> _updateInterests() async {
     if (!mounted) return;
@@ -890,16 +967,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         debugPrint('Error updating interests: ${res.statusCode} ${res.body}');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to save interests: ${res.statusCode}')),
+            SnackBar(
+              content: Text('Failed to save interests: ${res.statusCode}'),
+            ),
           );
         }
       }
     } catch (e) {
       debugPrint('Error updating interests exception: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Network error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Network error: $e')));
       }
     }
   }
@@ -908,78 +987,93 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final language = Provider.of<LanguageProvider>(context, listen: false);
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.bgCard,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            language.translate('select_interests'),
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: SingleChildScrollView(
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _allCategories.map((cat) {
-                final isSelected = _selectedInterests.contains(cat);
-                return GestureDetector(
-                  onTap: () {
-                    setDialogState(() {
-                      if (isSelected) {
-                        _selectedInterests.remove(cat);
-                      } else {
-                        _selectedInterests.add(cat);
-                      }
-                    });
-                    setState(() {}); // Update main screen
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.accent.withValues(alpha: 0.2)
-                          : Colors.white.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isSelected ? AppColors.accent : AppColors.border,
-                      ),
-                    ),
-                    child: Text(
-                      language.translate(cat),
-                      style: TextStyle(
-                        color: isSelected ? AppColors.accent : Colors.white,
-                        fontSize: 13,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
+      builder:
+          (ctx) => StatefulBuilder(
+            builder:
+                (ctx, setDialogState) => AlertDialog(
+                  backgroundColor: AppColors.bgCard,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  title: Text(
+                    language.translate('select_interests'),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  content: SingleChildScrollView(
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children:
+                          _allCategories.map((cat) {
+                            final isSelected = _selectedInterests.contains(cat);
+                            return GestureDetector(
+                              onTap: () {
+                                setDialogState(() {
+                                  if (isSelected) {
+                                    _selectedInterests.remove(cat);
+                                  } else {
+                                    _selectedInterests.add(cat);
+                                  }
+                                });
+                                setState(() {}); // Update main screen
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      isSelected
+                                          ? AppColors.accent.withValues(
+                                            alpha: 0.2,
+                                          )
+                                          : Colors.white.withValues(
+                                            alpha: 0.05,
+                                          ),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color:
+                                        isSelected
+                                            ? AppColors.accent
+                                            : AppColors.border,
+                                  ),
+                                ),
+                                child: Text(
+                                  language.translate(cat),
+                                  style: TextStyle(
+                                    color:
+                                        isSelected
+                                            ? AppColors.accent
+                                            : Colors.white,
+                                    fontSize: 13,
+                                    fontWeight:
+                                        isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
                     ),
                   ),
-                );
-              }).toList(),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-              },
-              child: Text(
-                language.translate('done'),
-                style: const TextStyle(
-                  color: AppColors.accent,
-                  fontWeight: FontWeight.bold,
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                      },
+                      child: Text(
+                        language.translate('done'),
+                        style: const TextStyle(
+                          color: AppColors.accent,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
     ).then((_) {
       _updateInterests();
     });
@@ -990,46 +1084,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final language = Provider.of<LanguageProvider>(context, listen: false);
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: AppColors.bgCard,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          language.translate('logout'),
-          style: const TextStyle(fontWeight: FontWeight.w700),
-        ),
-        content: Text(
-          language.translate('confirm_logout'),
-          style: const TextStyle(color: AppColors.textMuted),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              language.translate('cancel'),
+      builder:
+          (_) => AlertDialog(
+            backgroundColor: AppColors.bgCard,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Text(
+              language.translate('logout'),
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            content: Text(
+              language.translate('confirm_logout'),
               style: const TextStyle(color: AppColors.textMuted),
             ),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await auth.logout();
-              if (context.mounted) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
-              }
-            },
-            child: Text(
-              language.translate('logout'),
-              style: const TextStyle(
-                color: AppColors.danger,
-                fontWeight: FontWeight.w700,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  language.translate('cancel'),
+                  style: const TextStyle(color: AppColors.textMuted),
+                ),
               ),
-            ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await auth.logout();
+                  if (context.mounted) {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      (route) => false,
+                    );
+                  }
+                },
+                child: Text(
+                  language.translate('logout'),
+                  style: const TextStyle(
+                    color: AppColors.danger,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }
