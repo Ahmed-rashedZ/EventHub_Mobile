@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
-import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../services/api_service.dart';
 import '../../utils/constants.dart';
 import 'event_details_screen.dart';
@@ -58,6 +58,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final language = Provider.of<LanguageProvider>(context);
+
     if (_isLoading) {
       return const Scaffold(
         backgroundColor: AppColors.bgDark,
@@ -71,7 +73,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
         body: Center(
           child: Text(
-            _errorMessage ?? 'Profile not found',
+            language.translate(_errorMessage ?? 'profile_not_found'),
             style: const TextStyle(color: Colors.white),
           ),
         ),
@@ -80,13 +82,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
     final user = _profile!['user'];
     final profile = user['profile'];
-    final role = user['role'] ?? 'User';
+    final role = language.translate(user['role'] ?? 'User');
     final name = profile != null && profile['company_name'] != null ? profile['company_name'] : user['name'];
-    final bio = profile != null && profile['bio'] != null ? profile['bio'] : (user['bio'] ?? 'No bio available.');
+    final bio = profile != null && profile['bio'] != null ? profile['bio'] : (user['bio'] ?? language.translate('no_bio_available'));
     final logo = profile != null && profile['logo'] != null ? profile['logo'] : (user['avatar'] ?? user['image']);
     final joinedDate = user['created_at'] != null 
-        ? DateFormat.yMMMd().format(DateTime.parse(user['created_at']))
-        : 'Unknown';
+        ? DateFormat.yMMMd(language.locale.languageCode).format(DateTime.parse(user['created_at']))
+        : language.translate('unknown');
 
     return Scaffold(
       backgroundColor: AppColors.bgDark,
@@ -141,7 +143,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                               const Icon(Icons.star_rounded, color: AppColors.warning, size: 16),
                               const SizedBox(width: 4),
                               Text(
-                                '${user['manager_average_rating']} Rating',
+                                language.isArabic
+                                    ? 'تقييم ${user['manager_average_rating']}'
+                                    : '${user['manager_average_rating']} Rating',
                                 style: const TextStyle(color: AppColors.warning, fontWeight: FontWeight.w600, fontSize: 13),
                               ),
                             ],
@@ -160,7 +164,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('About', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                  Text(language.translate('about'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                   const SizedBox(height: 12),
                   Text(
                     bio,
@@ -171,16 +175,16 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                     children: [
                       const Icon(Icons.calendar_today, size: 16, color: AppColors.textMuted),
                       const SizedBox(width: 8),
-                      Text('Joined $joinedDate', style: const TextStyle(color: AppColors.textMuted)),
+                      Text('${language.translate('joined')} $joinedDate', style: const TextStyle(color: AppColors.textMuted)),
                     ],
                   ),
                   const SizedBox(height: 32),
-                  const Text('Portfolio', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                  Text(language.translate('portfolio'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                   const SizedBox(height: 16),
                   if (_portfolio.isEmpty)
-                    const Text('No events in portfolio yet.', style: TextStyle(color: AppColors.textMuted))
+                    Text(language.translate('no_portfolio_events'), style: const TextStyle(color: AppColors.textMuted))
                   else
-                    ..._portfolio.map((e) => _buildPortfolioEventCard(e)),
+                    ..._portfolio.map((e) => _buildPortfolioEventCard(e, language)),
                 ],
               ),
             ),
@@ -190,13 +194,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     );
   }
 
-  Widget _buildPortfolioEventCard(dynamic event) {
+  Widget _buildPortfolioEventCard(dynamic event, LanguageProvider language) {
     final title = event['title'] ?? 'Untitled';
     final dateStr = event['start_time'];
     String formattedDate = '';
     if (dateStr != null) {
       try {
-        formattedDate = DateFormat.yMMMd().format(DateTime.parse(dateStr));
+        formattedDate = DateFormat.yMMMd(language.locale.languageCode).format(DateTime.parse(dateStr));
       } catch (_) {}
     }
 
@@ -240,7 +244,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.textMuted),
+            Icon(
+              language.isArabic ? Icons.chevron_left : Icons.chevron_right,
+              color: AppColors.textMuted,
+            ),
           ],
         ),
       ),

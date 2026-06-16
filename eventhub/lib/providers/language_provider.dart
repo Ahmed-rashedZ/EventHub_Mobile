@@ -344,6 +344,14 @@ class LanguageProvider with ChangeNotifier {
     'enter_ticket_code_hint': 'Enter the ticket code manually',
     'ticket_code_placeholder': 'Enter ticket code...',
     'check_in': 'Check In',
+    'portfolio': 'Event Log',
+    'joined': 'Joined',
+    'no_bio_available': 'No bio available.',
+    'no_portfolio_events': 'No events in event log yet.',
+    'event manager': 'Event Manager',
+    'failed_to_load_profile': 'Failed to load profile',
+    'profile_not_found': 'Profile not found',
+    'unknown': 'Unknown',
   };
 
   static const Map<String, String> _arabicStrings = {
@@ -364,7 +372,7 @@ class LanguageProvider with ChangeNotifier {
     'notifications': 'الإشعارات',
     'app_preferences': 'تفضيلات التطبيق',
     'support': 'الدعم',
-    'about': 'حول التطبيق',
+    'about': 'حول',
     'language': 'اللغة',
     'change_email': 'تغيير البريد الإلكتروني',
     'change_password': 'تغيير كلمة المرور',
@@ -637,5 +645,13 @@ class LanguageProvider with ChangeNotifier {
     'enter_ticket_code_hint': 'أدخل رمز التذكرة يدوياً',
     'ticket_code_placeholder': 'أدخل رمز التذكرة...',
     'check_in': 'تسجيل الدخول',
+    'portfolio': 'سجل الأحداث',
+    'joined': 'انضم في',
+    'no_bio_available': 'لا توجد سيرة ذاتية متاحة.',
+    'no_portfolio_events': 'لا توجد فعاليات في سجل الأحداث بعد.',
+    'event manager': 'مدير الفعاليات',
+    'failed_to_load_profile': 'فشل في تحميل الملف الشخصي',
+    'profile_not_found': 'الملف الشخصي غير موجود',
+    'unknown': 'غير معروف',
   };
 }
