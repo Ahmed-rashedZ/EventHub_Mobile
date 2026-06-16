@@ -56,9 +56,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             _buildSection(language.translate('account'), [
               _buildSettingItem(
-                Icons.alternate_email_rounded,
-                language.translate('change_email'),
-                onTap: () => _showChangeEmailDialog(context, auth, language),
+                Icons.person_outline_rounded,
+                language.translate('personal_data'),
+                onTap: () => _showPersonalDataDialog(context, auth, language),
               ),
               _buildSettingItem(
                 Icons.lock_outline_rounded,
@@ -251,14 +251,93 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showChangeEmailDialog(
+  void _showPersonalDataDialog(
     BuildContext context,
     AuthProvider auth,
     LanguageProvider language,
   ) {
-    final currentEmailCtrl = TextEditingController(text: auth.userEmail);
-    final newEmailCtrl = TextEditingController();
-    final passwordCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(
+          language.translate('personal_data'),
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _dialogLabel(language.translate('full_name')),
+              const SizedBox(height: 6),
+              _readOnlyField(auth.userName),
+              const SizedBox(height: 16),
+              _dialogLabel(language.translate('email')),
+              const SizedBox(height: 6),
+              _readOnlyField(auth.userEmail),
+              const SizedBox(height: 16),
+              _dialogLabel(language.translate('password')),
+              const SizedBox(height: 6),
+              _readOnlyField('••••••••'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              language.translate('close'),
+              style: const TextStyle(
+                color: AppColors.accent,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _readOnlyField(String value) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Text(
+        value,
+        style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
+      ),
+    );
+  }
+
+  Widget _dialogLabel(String text) {
+    return Text(
+      text.toUpperCase(),
+      style: const TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textMuted,
+        letterSpacing: 0.5,
+      ),
+    );
+  }
+
+  void _showChangePasswordDialog(
+    BuildContext context,
+    LanguageProvider language,
+  ) {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final currentCtrl = TextEditingController();
+    final newCtrl = TextEditingController();
+    final confirmCtrl = TextEditingController();
     bool isLoading = false;
 
     showDialog(
@@ -272,8 +351,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   title: Text(
-                    language.translate('change_email'),
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+                    language.translate('change_password'),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   content: SingleChildScrollView(
                     child: Column(
@@ -288,35 +367,57 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        _dialogLabel(language.translate('current_email')),
-                        const SizedBox(height: 6),
                         _dialogInput(
-                          currentEmailCtrl,
-                          language.translate('current_email'),
-                          false,
-                        ),
-                        const SizedBox(height: 16),
-                        _dialogLabel(language.translate('new_email')),
-                        const SizedBox(height: 6),
-                        _dialogInput(
-                          newEmailCtrl,
-                          language.translate('new_email'),
-                          false,
-                        ),
-                        const SizedBox(height: 16),
-                        _dialogLabel(language.translate('current_password')),
-                        const SizedBox(height: 6),
-                        _dialogInput(
-                          passwordCtrl,
+                          currentCtrl,
                           language.translate('current_password'),
                           true,
+                        ),
+                        const SizedBox(height: 12),
+                        _dialogInput(
+                          newCtrl,
+                          language.translate('new_password'),
+                          true,
+                        ),
+                        const SizedBox(height: 12),
+                        _dialogInput(
+                          confirmCtrl,
+                          language.translate('confirm_password'),
+                          true,
+                        ),
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment:
+                              language.isArabic
+                                  ? Alignment.centerLeft
+                                  : Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => ForgotPasswordScreen(
+                                        email: auth.userEmail,
+                                      ),
+                                ),
+                              );
+                            },
+                            child: Text(
+                              language.translate('forgot_password'),
+                              style: const TextStyle(
+                                color: AppColors.accent2,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
                   actions: [
                     TextButton(
-                      onPressed: () => Navigator.pop(ctx),
+                      onPressed: isLoading ? null : () => Navigator.pop(ctx),
                       child: Text(
                         language.translate('cancel'),
                         style: const TextStyle(color: AppColors.textMuted),
@@ -327,19 +428,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           isLoading
                               ? null
                               : () async {
-                                if (newEmailCtrl.text.trim().isEmpty) return;
+                                if (currentCtrl.text.trim().isEmpty ||
+                                    newCtrl.text.trim().isEmpty ||
+                                    confirmCtrl.text.trim().isEmpty) {
+                                  return;
+                                }
+                                if (newCtrl.text != confirmCtrl.text) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        language.translate(
+                                          'passwords_not_match',
+                                        ),
+                                      ),
+                                      backgroundColor: AppColors.danger,
+                                    ),
+                                  );
+                                  return;
+                                }
                                 setDialogState(() => isLoading = true);
                                 try {
                                   final api = ApiService();
                                   final res = await api.put('/profile', {
-                                    'email': newEmailCtrl.text.trim(),
-                                    'current_email':
-                                        currentEmailCtrl.text.trim(),
-                                    'password': passwordCtrl.text.trim(),
+                                    'name': auth.userName,
+                                    'email': auth.userEmail,
+                                    'current_password': currentCtrl.text
+                                        .trim(),
+                                    'password': newCtrl.text.trim(),
+                                    'password_confirmation': confirmCtrl.text
+                                        .trim(),
                                   });
 
                                   if (res.statusCode == 200) {
-                                    await auth.checkAuth();
                                     if (ctx.mounted) Navigator.pop(ctx);
                                     if (context.mounted) {
                                       ScaffoldMessenger.of(
@@ -347,7 +467,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ).showSnackBar(
                                         SnackBar(
                                           content: Text(
-                                            language.translate('email_updated'),
+                                            language.translate(
+                                              'password_updated',
+                                            ),
                                           ),
                                           backgroundColor: AppColors.success,
                                           behavior: SnackBarBehavior.floating,
@@ -363,7 +485,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         SnackBar(
                                           content: Text(
                                             data['message'] ??
-                                                'Failed to update email',
+                                                'Failed to update password',
                                           ),
                                           backgroundColor: AppColors.danger,
                                           behavior: SnackBarBehavior.floating,
@@ -393,7 +515,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                               )
                               : Text(
-                                language.translate('change'),
+                                language.translate('update'),
                                 style: const TextStyle(
                                   color: AppColors.accent,
                                   fontWeight: FontWeight.bold,
@@ -402,137 +524,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ],
                 ),
-          ),
-    );
-  }
-
-  Widget _dialogLabel(String text) {
-    return Text(
-      text.toUpperCase(),
-      style: const TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textMuted,
-        letterSpacing: 0.5,
-      ),
-    );
-  }
-
-  void _showChangePasswordDialog(
-    BuildContext context,
-    LanguageProvider language,
-  ) {
-    final auth = Provider.of<AuthProvider>(context, listen: false);
-    final currentCtrl = TextEditingController();
-    final newCtrl = TextEditingController();
-    final confirmCtrl = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            backgroundColor: AppColors.bgCard,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            title: Text(
-              language.translate('change_password'),
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                Text(
-                  language.translate('verify_identity'),
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _dialogInput(
-                  currentCtrl,
-                  language.translate('current_password'),
-                  true,
-                ),
-                const SizedBox(height: 12),
-                _dialogInput(newCtrl, language.translate('new_password'), true),
-                const SizedBox(height: 12),
-                _dialogInput(
-                  confirmCtrl,
-                  language.translate('confirm_password'),
-                  true,
-                ),
-                const SizedBox(height: 12),
-                Align(
-                  alignment:
-                      language.isArabic
-                          ? Alignment.centerLeft
-                          : Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (_) =>
-                                  ForgotPasswordScreen(email: auth.userEmail),
-                        ),
-                      );
-                    },
-                    child: Text(
-                      language.translate('forgot_password'),
-                      style: const TextStyle(
-                        color: AppColors.accent2,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text(
-                  language.translate('cancel'),
-                  style: const TextStyle(color: AppColors.textMuted),
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  if (newCtrl.text != confirmCtrl.text) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          language.translate('passwords_not_match'),
-                        ),
-                        backgroundColor: AppColors.danger,
-                      ),
-                    );
-                    return;
-                  }
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(language.translate('password_updated')),
-                      backgroundColor: AppColors.success,
-                    ),
-                  );
-                },
-                child: Text(
-                  language.translate('update'),
-                  style: const TextStyle(
-                    color: AppColors.accent,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
           ),
     );
   }
