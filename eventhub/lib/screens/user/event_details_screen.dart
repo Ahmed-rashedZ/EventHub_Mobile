@@ -244,6 +244,14 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       };
     }).toList();
     final isStarted = dt.isBefore(DateTime.now());
+    final endStr = e['end_time'];
+    DateTime? endDt;
+    try {
+      if (endStr != null) {
+        endDt = DateTime.parse(endStr).toLocal();
+      }
+    } catch (_) {}
+    final isEnded = (endDt != null && endDt.isBefore(DateTime.now())) || e['time_status'] == 'ended';
     final canRate = _hasTicket && isStarted; // Must have attended AND event must be started/passed
 
     final totalCapacity = e['capacity'] ?? 0;
@@ -569,7 +577,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: (!isStarted && auth.role != 'Assistant') ? SafeArea(
+      bottomNavigationBar: (!isEnded && auth.role != 'Assistant') ? SafeArea(
         child: Container(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
           decoration: BoxDecoration(
