@@ -479,14 +479,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   } else {
                                     final data = jsonDecode(res.body);
                                     if (context.mounted) {
+                                      String errorMessage = data['message'] ?? 
+                                          language.translate('failed_to_update_password');
+                                      
+                                      // Use local translation for common errors
+                                      if (errorMessage.contains('Current password is incorrect')) {
+                                        errorMessage = language.translate('current_password_incorrect');
+                                      } else if (errorMessage.contains('Current password is required')) {
+                                        errorMessage = language.translate('current_password_required');
+                                      }
+                                      
                                       ScaffoldMessenger.of(
                                         context,
                                       ).showSnackBar(
                                         SnackBar(
-                                          content: Text(
-                                            data['message'] ??
-                                                'Failed to update password',
-                                          ),
+                                          content: Text(errorMessage),
                                           backgroundColor: AppColors.danger,
                                           behavior: SnackBarBehavior.floating,
                                         ),
