@@ -439,10 +439,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               language.translate('change_password'),
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                 Text(
                   language.translate('verify_identity'),
                   style: const TextStyle(
@@ -492,6 +493,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ],
+            ),
             ),
             actions: [
               TextButton(
