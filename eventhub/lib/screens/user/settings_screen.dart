@@ -7,6 +7,7 @@ import '../../utils/constants.dart';
 import '../../providers/language_provider.dart';
 import '../auth/login_screen.dart';
 import '../auth/forgot_password_screen.dart';
+import 'main_navigation.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -34,7 +35,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 : Icons.arrow_back_ios_new_rounded,
             size: 20,
           ),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            final nav = context.findAncestorStateOfType<MainNavigationState>();
+            if (nav != null) {
+              nav.setIndex(2);
+            }
+          },
         ),
       ),
       body: SingleChildScrollView(
