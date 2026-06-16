@@ -8,6 +8,7 @@ import '../../providers/language_provider.dart';
 import '../auth/login_screen.dart';
 import '../auth/forgot_password_screen.dart';
 import 'main_navigation.dart';
+import '../assistant/assistant_main_navigation.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -39,6 +40,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             final nav = context.findAncestorStateOfType<MainNavigationState>();
             if (nav != null) {
               nav.setIndex(2);
+              return;
+            }
+            final assistantNav = context.findAncestorStateOfType<AssistantMainNavigationState>();
+            if (assistantNav != null) {
+              assistantNav.setIndex(3);
             }
           },
         ),
