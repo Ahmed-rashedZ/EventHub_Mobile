@@ -424,7 +424,13 @@ class _QRScannerPageState extends State<_QRScannerPage> {
     final code = barcodes.first.rawValue;
     if (code == null || code.isEmpty) return;
 
+    _controller?.stop();
+    _processCode(code);
+  }
+
+  void _processCode(String code) async {
     setState(() => _isProcessing = true);
+    _controller?.stop();
 
     final ticketProvider = Provider.of<TicketProvider>(context, listen: false);
     final result = await ticketProvider.processCheckIn(code, eventId: widget.eventId);
@@ -457,7 +463,7 @@ class _QRScannerPageState extends State<_QRScannerPage> {
             ),
             const SizedBox(height: 16),
              Text(
-               success ? Provider.of<LanguageProvider>(context, listen: false).translate('checkin_successful') : Provider.of<LanguageProvider>(context, listen: false).translate('checkin_failed'),
+               success ? Provider.of<LanguageProvider>(ctx, listen: false).translate('checkin_successful') : Provider.of<LanguageProvider>(ctx, listen: false).translate('checkin_failed'),
                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: success ? AppColors.success : AppColors.danger),
              ),
              const SizedBox(height: 8),
@@ -471,6 +477,7 @@ class _QRScannerPageState extends State<_QRScannerPage> {
               onPressed: () {
                 Navigator.pop(ctx);
                 setState(() => _isProcessing = false);
+                _controller?.start();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.accent,
@@ -478,16 +485,117 @@ class _QRScannerPageState extends State<_QRScannerPage> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                child: Text(Provider.of<LanguageProvider>(context, listen: false).translate('scan_next'), style: const TextStyle(fontWeight: FontWeight.bold)),
+                child: Text(Provider.of<LanguageProvider>(ctx, listen: false).translate('scan_next'), style: const TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
         ],
       ),
     ).then((_) {
-      if (mounted) setState(() => _isProcessing = false);
+      if (mounted) {
+        setState(() => _isProcessing = false);
+        _controller?.start();
+      }
     });
 
     widget.onScanComplete();
+  }
+
+  void _showManualEntryDialog() {
+    final language = Provider.of<LanguageProvider>(context, listen: false);
+    final textCtrl = TextEditingController();
+
+    setState(() {
+      _isProcessing = true;
+    });
+
+    showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: AppColors.bgCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              const Icon(Icons.edit_outlined, color: AppColors.accent),
+              const SizedBox(width: 8),
+              Text(
+                language.translate('manual_entry'),
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                language.translate('enter_ticket_code_hint'),
+                style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: TextField(
+                  controller: textCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: language.translate('ticket_code_placeholder'),
+                    hintStyle: const TextStyle(color: Colors.white24, fontSize: 14),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+              },
+              child: Text(
+                language.translate('cancel'),
+                style: const TextStyle(color: AppColors.textMuted),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final code = textCtrl.text.trim();
+                if (code.isNotEmpty) {
+                  Navigator.pop(ctx, code);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: Text(
+                language.translate('check_in'),
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    ).then((code) {
+      textCtrl.dispose();
+      if (code != null && code.isNotEmpty) {
+        _processCode(code);
+      } else {
+        if (mounted) {
+          setState(() {
+            _isProcessing = false;
+          });
+        }
+      }
+    });
   }
 
   @override
@@ -530,7 +638,7 @@ class _QRScannerPageState extends State<_QRScannerPage> {
                    children: [
                      if (_isProcessing)
                        const CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2)
-                     else
+                     else ...[
                        Container(
                          margin: const EdgeInsets.symmetric(horizontal: 40),
                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
@@ -544,6 +652,40 @@ class _QRScannerPageState extends State<_QRScannerPage> {
                            textAlign: TextAlign.center,
                          ),
                        ),
+                       const SizedBox(height: 16),
+                       GestureDetector(
+                         onTap: _showManualEntryDialog,
+                         child: Container(
+                           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                           decoration: BoxDecoration(
+                             color: AppColors.accent.withValues(alpha: 0.85),
+                             borderRadius: BorderRadius.circular(30),
+                             boxShadow: [
+                               BoxShadow(
+                                 color: AppColors.accent.withValues(alpha: 0.4),
+                                 blurRadius: 8,
+                                 offset: const Offset(0, 3),
+                               ),
+                             ],
+                           ),
+                           child: Row(
+                             mainAxisSize: MainAxisSize.min,
+                             children: [
+                               const Icon(Icons.edit_outlined, color: Colors.white, size: 18),
+                               const SizedBox(width: 8),
+                               Text(
+                                 language.translate('manual_entry'),
+                                 style: const TextStyle(
+                                   color: Colors.white,
+                                   fontWeight: FontWeight.bold,
+                                   fontSize: 14,
+                                 ),
+                               ),
+                             ],
+                           ),
+                         ),
+                       ),
+                     ],
                    ],
                  ),
                ),

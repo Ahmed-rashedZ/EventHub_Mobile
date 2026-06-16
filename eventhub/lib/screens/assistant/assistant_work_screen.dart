@@ -318,49 +318,60 @@ class _AssistantWorkScreenState extends State<AssistantWorkScreen> {
                 Positioned(
                   top: 10,
                   left: 10,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isLive ? AppColors.success : AppColors.accent,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.3),
-                          blurRadius: 4,
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isLive) ...[
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
+                  child: (() {
+                    final isUpcoming = timeStatus == 'upcoming';
+                    final Color badgeColor = isLive
+                        ? AppColors.success
+                        : isUpcoming
+                            ? AppColors.accent
+                            : AppColors.textMuted;
+                    final String badgeText = isLive
+                        ? language.translate('live')
+                        : isUpcoming
+                            ? language.translate('upcoming_upper')
+                            : language.translate('completed_upper');
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: badgeColor,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (isLive) ...[
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                          ],
+                          Text(
+                            badgeText,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
                               color: Colors.white,
-                              shape: BoxShape.circle,
+                              letterSpacing: 0.5,
                             ),
                           ),
-                          const SizedBox(width: 4),
                         ],
-                        Text(
-                          isLive
-                              ? language.translate('live')
-                              : language.translate('upcoming_upper'),
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  })(),
                 ),
               ],
             ),
@@ -520,7 +531,11 @@ class _AssistantWorkScreenState extends State<AssistantWorkScreen> {
                               minHeight: 6,
                               backgroundColor: AppColors.border,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                isLive ? AppColors.success : AppColors.accent,
+                                isLive
+                                    ? AppColors.success
+                                    : (timeStatus == 'upcoming'
+                                        ? AppColors.accent
+                                        : AppColors.textMuted),
                               ),
                             ),
                           ),

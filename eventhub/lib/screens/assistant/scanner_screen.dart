@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
@@ -16,7 +17,30 @@ class ScannerScreen extends StatefulWidget {
 }
 
 class _ScannerScreenState extends State<ScannerScreen> {
+  late MobileScannerController _controller;
   bool _isProcessing = false;
+
+  // Manual entry custom overlay state
+  bool _showManualInput = false;
+  final TextEditingController _manualCodeController = TextEditingController();
+  Map<String, dynamic>? _manualResult;
+  bool _isManualSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = MobileScannerController(
+      detectionSpeed: DetectionSpeed.normal,
+      facing: CameraFacing.back,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _manualCodeController.dispose();
+    super.dispose();
+  }
 
   void _onDetect(BarcodeCapture capture) async {
     if (_isProcessing) return;
@@ -28,6 +52,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
     if (rawValue == null || rawValue.isEmpty) return;
 
     setState(() => _isProcessing = true);
+    _controller.stop();
 
     final provider = Provider.of<TicketProvider>(context, listen: false);
     // Send the raw QR code string directly to the backend
@@ -76,7 +101,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         content: Padding(
@@ -121,10 +146,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
             width: double.infinity,
             child: TextButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(dialogCtx);
                 // Cooldown to prevent immediate double scan
                 Future.delayed(const Duration(seconds: 2), () {
-                  if (mounted) setState(() => _isProcessing = false);
+                  if (mounted) {
+                    setState(() => _isProcessing = false);
+                    _controller.start();
+                  }
                 });
               },
               style: TextButton.styleFrom(
@@ -133,7 +161,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
               child: Text(
-                 Provider.of<LanguageProvider>(context, listen: false).translate('scan_next'),
+                 Provider.of<LanguageProvider>(dialogCtx, listen: false).translate('scan_next'),
                  style: TextStyle(
                    color: color,
                    fontWeight: FontWeight.w700,
@@ -150,12 +178,14 @@ class _ScannerScreenState extends State<ScannerScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
+    final language = Provider.of<LanguageProvider>(context);
 
     return Scaffold(
       body: Stack(
         children: [
           // Camera
           MobileScanner(
+            controller: _controller,
             onDetect: _onDetect,
           ),
           // Scanning overlay
@@ -196,7 +226,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                         ),
                         const SizedBox(width: 8),
                          Text(
-                           Provider.of<LanguageProvider>(context, listen: false).translate('scanner'),
+                           language.translate('scanner'),
                            style: const TextStyle(
                              fontWeight: FontWeight.w700,
                              fontSize: 16,
@@ -252,9 +282,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
               ),
             ),
           ),
-          // Bottom instruction
+          // Bottom instruction + manual entry button
           Positioned(
-            bottom: 60,
+            bottom: 40,
             left: 0,
             right: 0,
             child: Column(
@@ -276,7 +306,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                       ),
                       const SizedBox(width: 8),
                        Text(
-                         _isProcessing ? Provider.of<LanguageProvider>(context, listen: false).translate('processing') : Provider.of<LanguageProvider>(context, listen: false).translate('point_camera_ticket'),
+                         _isProcessing ? language.translate('processing') : language.translate('point_camera_ticket'),
                          style: TextStyle(
                            color: Colors.white.withValues(alpha: 0.9),
                            fontWeight: FontWeight.w500,
@@ -284,6 +314,34 @@ class _ScannerScreenState extends State<ScannerScreen> {
                          ),
                        ),
                     ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Manual entry button
+                GestureDetector(
+                  onTap: _isProcessing ? null : () => _showManualEntrySheet(),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(color: AppColors.accent.withValues(alpha: 0.5)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.keyboard_alt_outlined, color: Colors.white, size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          language.translate('manual_entry'),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -297,7 +355,285 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 child: CircularProgressIndicator(color: AppColors.accent2),
               ),
             ),
+          // Inline Manual Input Overlay
+          if (_showManualInput)
+            _buildManualInputOverlay(language),
         ],
+      ),
+    );
+  }
+
+  void _showManualEntrySheet() {
+    _controller.stop();
+    setState(() {
+      _showManualInput = true;
+      _manualResult = null;
+      _isManualSubmitting = false;
+      _manualCodeController.clear();
+    });
+  }
+
+  Widget _buildManualInputOverlay(LanguageProvider language) {
+    IconData? icon;
+    Color? resultColor;
+    String? title;
+    String? message;
+
+    if (_manualResult != null) {
+      final bool success = _manualResult!['success'] == true;
+      message = _manualResult!['message'] ?? 'Unknown result';
+      final int statusCode = _manualResult!['statusCode'] ?? 0;
+
+      if (success) {
+        icon = Icons.check_circle;
+        resultColor = AppColors.success;
+        title = language.translate('entry_allowed');
+      } else if (statusCode == 422) {
+        icon = Icons.warning_amber;
+        resultColor = AppColors.warning;
+        title = language.translate('already_entered');
+      } else if (statusCode == 404) {
+        icon = Icons.cancel;
+        resultColor = AppColors.danger;
+        title = language.translate('invalid_ticket');
+      } else if (statusCode == 403) {
+        icon = Icons.block;
+        resultColor = AppColors.danger;
+        title = language.translate('not_your_event');
+      } else {
+        icon = Icons.error;
+        resultColor = AppColors.danger;
+        title = language.translate('error');
+      }
+    }
+
+    return Positioned.fill(
+      child: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            color: Colors.black.withValues(alpha: 0.82),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  // Header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        language.translate('manual_entry'),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                      if (_manualResult == null && !_isManualSubmitting)
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white70, size: 24),
+                          onPressed: () {
+                            setState(() {
+                              _showManualInput = false;
+                            });
+                            _controller.start();
+                          },
+                        ),
+                    ],
+                  ),
+                  const Spacer(),
+                  if (_manualResult == null) ...[
+                    // Input Mode
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.accent.withValues(alpha: 0.2)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.keyboard_alt_outlined, color: AppColors.accent2, size: 24),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              language.translate('enter_ticket_code_hint'),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.white.withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    TextField(
+                      controller: _manualCodeController,
+                      autofocus: true,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 2,
+                      ),
+                      enabled: !_isManualSubmitting,
+                      decoration: InputDecoration(
+                        hintText: language.translate('ticket_code_placeholder'),
+                        hintStyle: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.25),
+                          fontSize: 16,
+                          letterSpacing: 1,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white.withValues(alpha: 0.05),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: AppColors.accent, width: 1.5),
+                        ),
+                        prefixIcon: Icon(Icons.confirmation_number_outlined, color: Colors.white.withValues(alpha: 0.4)),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: _isManualSubmitting
+                            ? null
+                            : () async {
+                                final code = _manualCodeController.text.trim();
+                                if (code.isEmpty) return;
+
+                                setState(() {
+                                  _isManualSubmitting = true;
+                                });
+
+                                final provider = Provider.of<TicketProvider>(context, listen: false);
+                                final result = await provider.processCheckIn(code);
+
+                                if (!mounted) return;
+
+                                setState(() {
+                                  _isManualSubmitting = false;
+                                  _manualResult = result;
+                                });
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.accent,
+                          disabledBackgroundColor: AppColors.accent.withValues(alpha: 0.4),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          elevation: 0,
+                        ),
+                        child: _isManualSubmitting
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 3,
+                                ),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.check_circle_outline, color: Colors.white, size: 22),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    language.translate('check_in'),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ] else ...[
+                    // Result Mode
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: resultColor!.withValues(alpha: 0.15),
+                        border: Border.all(color: resultColor.withValues(alpha: 0.3), width: 2),
+                      ),
+                      child: Icon(icon, color: resultColor, size: 44),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      title!,
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: resultColor,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      message!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: AppColors.textMuted,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _manualResult = null;
+                            _manualCodeController.clear();
+                          });
+                          // Cooldown before restarting camera
+                          Future.delayed(const Duration(milliseconds: 500), () {
+                            if (mounted) {
+                              setState(() {
+                                _showManualInput = false;
+                              });
+                              _controller.start();
+                            }
+                          });
+                        },
+                        style: TextButton.styleFrom(
+                          backgroundColor: resultColor.withValues(alpha: 0.1),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        child: Text(
+                          language.translate('scan_next'),
+                          style: TextStyle(
+                            color: resultColor,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                  const Spacer(),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -305,19 +641,19 @@ class _ScannerScreenState extends State<ScannerScreen> {
   void _showLogoutDialog(BuildContext context, AuthProvider auth) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-         title: Text(Provider.of<LanguageProvider>(context, listen: false).translate('logout'), style: const TextStyle(fontWeight: FontWeight.w700)),
-         content: Text(Provider.of<LanguageProvider>(context, listen: false).translate('confirm_logout'), style: const TextStyle(color: AppColors.textMuted)),
+         title: Text(Provider.of<LanguageProvider>(dialogCtx, listen: false).translate('logout'), style: const TextStyle(fontWeight: FontWeight.w700)),
+         content: Text(Provider.of<LanguageProvider>(dialogCtx, listen: false).translate('confirm_logout'), style: const TextStyle(color: AppColors.textMuted)),
          actions: [
            TextButton(
-             onPressed: () => Navigator.pop(context),
-             child: Text(Provider.of<LanguageProvider>(context, listen: false).translate('cancel'), style: const TextStyle(color: AppColors.textMuted)),
+             onPressed: () => Navigator.pop(dialogCtx),
+             child: Text(Provider.of<LanguageProvider>(dialogCtx, listen: false).translate('cancel'), style: const TextStyle(color: AppColors.textMuted)),
            ),
            TextButton(
              onPressed: () async {
-               Navigator.pop(context);
+               Navigator.pop(dialogCtx);
                await auth.logout();
                if (context.mounted) {
                  Navigator.of(context).pushAndRemoveUntil(
@@ -326,7 +662,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                  );
                }
              },
-             child: Text(Provider.of<LanguageProvider>(context, listen: false).translate('logout'), style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
+             child: Text(Provider.of<LanguageProvider>(dialogCtx, listen: false).translate('logout'), style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
            ),
          ],
       ),

@@ -340,6 +340,10 @@ class LanguageProvider with ChangeNotifier {
     'days_attended': 'Days Attended',
     'scanned_today': 'Scanned Today',
     'not_scanned_today': 'Not Scanned Today',
+    'manual_entry': 'Manual Entry',
+    'enter_ticket_code_hint': 'Enter the ticket code manually',
+    'ticket_code_placeholder': 'Enter ticket code...',
+    'check_in': 'Check In',
   };
 
   static const Map<String, String> _arabicStrings = {
@@ -629,5 +633,9 @@ class LanguageProvider with ChangeNotifier {
     'days_attended': 'أيام الحضور',
     'scanned_today': 'تم المسح اليوم',
     'not_scanned_today': 'لم يمسح اليوم',
+    'manual_entry': 'إدخال يدوي',
+    'enter_ticket_code_hint': 'أدخل رمز التذكرة يدوياً',
+    'ticket_code_placeholder': 'أدخل رمز التذكرة...',
+    'check_in': 'تسجيل الدخول',
   };
 }

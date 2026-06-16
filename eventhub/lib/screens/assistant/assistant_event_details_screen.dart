@@ -151,14 +151,45 @@ class _AssistantEventDetailsScreenState extends State<AssistantEventDetailsScree
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.textMuted.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
-                             ),
-                             child: Text(language.translate('completed_upper'), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textMuted, letterSpacing: 1)),
-                           ),
+                          (() {
+                            final timeStatus = event['time_status'] ?? 'completed';
+                            final isLive = timeStatus == 'live';
+                            final isUpcoming = timeStatus == 'upcoming';
+                            final Color badgeColor = isLive
+                                ? AppColors.success
+                                : isUpcoming
+                                    ? AppColors.accent
+                                    : AppColors.textMuted;
+                            final String badgeText = isLive
+                                ? language.translate('live')
+                                : isUpcoming
+                                    ? language.translate('upcoming_upper')
+                                    : language.translate('completed_upper');
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: badgeColor.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (isLive) ...[
+                                    Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: BoxDecoration(
+                                        color: badgeColor,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                  ],
+                                  Text(badgeText, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: badgeColor, letterSpacing: 1)),
+                                ],
+                              ),
+                            );
+                          })(),
                           const SizedBox(height: 8),
                           Text(
                             widget.eventTitle,
