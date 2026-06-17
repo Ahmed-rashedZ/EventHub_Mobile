@@ -221,15 +221,13 @@ class _AssistantWorkScreenState extends State<AssistantWorkScreen> {
     final venue = event['venue'];
     final externalName = event['external_venue_name'];
     final externalLoc = event['external_venue_location'];
+    final venueLocation = venue?['location'] ?? externalLoc;
 
     String venueName = language.translate('tba');
     if (venue != null) {
       venueName = venue['name'] ?? language.translate('tba');
     } else if (externalName != null && externalName.toString().isNotEmpty) {
       venueName = externalName.toString();
-      if (externalLoc != null && externalLoc.toString().isNotEmpty) {
-        venueName += " ($externalLoc)";
-      }
     }
     final timeStatus = event['time_status'] ?? 'upcoming';
     final isLive = timeStatus == 'live';
@@ -442,13 +440,15 @@ class _AssistantWorkScreenState extends State<AssistantWorkScreen> {
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                if (venue == null &&
-                                    externalLoc != null &&
-                                    externalLoc.toString().isNotEmpty)
+                                if (venueLocation != null &&
+                                    venueLocation.toString().isNotEmpty &&
+                                    venueLocation.toString().startsWith(
+                                      'http',
+                                    ))
                                   GestureDetector(
                                     onTap:
                                         () => _launchVenueUrl(
-                                          externalLoc.toString(),
+                                          venueLocation.toString(),
                                         ),
                                     child: Text(
                                       language.translate('open_in_maps'),
