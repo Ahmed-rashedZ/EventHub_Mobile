@@ -10,6 +10,7 @@ class QRCodeScreen extends StatelessWidget {
   final String ticketId;
   final String ticketNumber;
   final bool isUsed;
+  final bool isExpired;
 
   const QRCodeScreen({
     super.key,
@@ -18,6 +19,7 @@ class QRCodeScreen extends StatelessWidget {
     required this.ticketId,
     required this.ticketNumber,
     this.isUsed = false,
+    this.isExpired = false,
   });
 
   @override
@@ -106,24 +108,27 @@ class QRCodeScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 24),
                           // The QR code uses the actual qr_code string from the backend
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey.shade200, width: 2),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: QrImageView(
-                              data: qrCode,
-                              version: QrVersions.auto,
-                              size: 220.0,
-                              backgroundColor: Colors.white,
-                              eyeStyle: const QrEyeStyle(
-                                eyeShape: QrEyeShape.square,
-                                color: Color(0xFF1a1a2e),
+                          Opacity(
+                            opacity: isExpired ? 0.4 : 1.0,
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade200, width: 2),
+                                borderRadius: BorderRadius.circular(16),
                               ),
-                              dataModuleStyle: const QrDataModuleStyle(
-                                dataModuleShape: QrDataModuleShape.square,
-                                color: Color(0xFF1a1a2e),
+                              child: QrImageView(
+                                data: qrCode,
+                                version: QrVersions.auto,
+                                size: 220.0,
+                                backgroundColor: Colors.white,
+                                eyeStyle: const QrEyeStyle(
+                                  eyeShape: QrEyeShape.square,
+                                  color: Color(0xFF1a1a2e),
+                                ),
+                                dataModuleStyle: const QrDataModuleStyle(
+                                  dataModuleShape: QrDataModuleShape.square,
+                                  color: Color(0xFF1a1a2e),
+                                ),
                               ),
                             ),
                           ),
@@ -132,31 +137,39 @@ class QRCodeScreen extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                             decoration: BoxDecoration(
-                              color: isUsed 
-                                  ? Colors.red.shade50 
-                                  : Colors.green.shade50,
+                              color: isUsed
+                                  ? Colors.red.shade50
+                                  : (isExpired ? Colors.orange.shade50 : Colors.green.shade50),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: isUsed 
-                                    ? Colors.red.shade200 
-                                    : Colors.green.shade200,
+                                color: isUsed
+                                    ? Colors.red.shade200
+                                    : (isExpired ? Colors.orange.shade200 : Colors.green.shade200),
                               ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
-                                  isUsed ? Icons.check_circle : Icons.verified,
+                                  isUsed ? Icons.check_circle : (isExpired ? Icons.event_busy : Icons.verified),
                                   size: 16,
-                                  color: isUsed ? Colors.red.shade600 : Colors.green.shade600,
+                                  color: isUsed
+                                      ? Colors.red.shade600
+                                      : (isExpired ? Colors.orange.shade600 : Colors.green.shade600),
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  isUsed ? language.translate('ticket_used').toUpperCase() : language.translate('valid_ticket').toUpperCase(),
+                                  isUsed
+                                      ? language.translate('ticket_used').toUpperCase()
+                                      : (isExpired
+                                          ? language.translate('not_available').toUpperCase()
+                                          : language.translate('valid_ticket').toUpperCase()),
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700,
-                                    color: isUsed ? Colors.red.shade600 : Colors.green.shade600,
+                                    color: isUsed
+                                        ? Colors.red.shade600
+                                        : (isExpired ? Colors.orange.shade600 : Colors.green.shade600),
                                     letterSpacing: 0.5,
                                   ),
                                 ),

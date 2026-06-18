@@ -193,7 +193,8 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
     try { dt = dateStr != null ? DateTime.parse(dateStr) : DateTime.now(); } catch (_) { dt = DateTime.now(); }
     final dateDisplay = '${dt.day}/${dt.month}/${dt.year}';
 
-    final isConfirmed = status == 'confirmed' || status == 'valid' || (isUpcoming && !isUsed);
+    final isExpired = !isUpcoming && !isUsed;
+    final isConfirmed = status == 'confirmed' || status == 'valid' || (isUpcoming && !isUsed) && !isExpired;
 
     return InkWell(
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EventDetailsScreen(event: event))),
@@ -229,14 +230,20 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
+                              color: isExpired
+                                  ? AppColors.warning.withValues(alpha: 0.3)
+                                  : Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  (isUsed ? language.translate('attended') : (isUpcoming ? language.translate('active') : language.translate('expired'))).toUpperCase(),
+                                  (isUsed
+                                      ? language.translate('attended')
+                                      : (isExpired
+                                          ? language.translate('expired')
+                                          : language.translate('active'))).toUpperCase(),
                                   style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
                                 ),
                                 const SizedBox(width: 6),
@@ -268,26 +275,36 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
                           ],
                           const SizedBox(height: 16),
                           ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(context, MaterialPageRoute(
-                                builder: (_) => QRCodeScreen(
-                                  qrCode: qrCode,
-                                  eventTitle: title,
-                                  ticketId: ticketId,
-                                  ticketNumber: ticketNumber,
-                                  isUsed: isUsed,
-                                ),
-                              ));
-                            },
+                            onPressed: isExpired
+                                ? null
+                                : () {
+                                    Navigator.push(context, MaterialPageRoute(
+                                      builder: (_) => QRCodeScreen(
+                                        qrCode: qrCode,
+                                        eventTitle: title,
+                                        ticketId: ticketId,
+                                        ticketNumber: ticketNumber,
+                                        isUsed: isUsed,
+                                        isExpired: isExpired,
+                                      ),
+                                    ));
+                                  },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white.withValues(alpha: 0.2),
+                              backgroundColor: isExpired
+                                  ? Colors.white.withValues(alpha: 0.1)
+                                  : Colors.white.withValues(alpha: 0.2),
                               foregroundColor: Colors.white,
                               elevation: 0,
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                               minimumSize: const Size(0, 34),
                             ),
-                            child: Text(isUsed ? language.translate('view_details') : language.translate('view_tickets'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            child: Text(
+                              isUsed
+                                  ? language.translate('view_details')
+                                  : (isExpired ? language.translate('not_available') : language.translate('view_tickets')),
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ],
                       ),
@@ -303,7 +320,7 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10)],
                       ),
-                      child: Icon(Icons.qr_code_2_rounded, size: 64, color: isUsed ? Colors.grey : Colors.black),
+                      child: Icon(Icons.qr_code_2_rounded, size: 64, color: (isUsed || isExpired) ? Colors.grey : Colors.black),
                     ),
                   ],
                 ),
