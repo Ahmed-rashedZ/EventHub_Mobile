@@ -384,6 +384,237 @@ class _AssistantEventWorkScreenState extends State<AssistantEventWorkScreen> {
   }
 }
 
+// ── Manual Entry Page ────────────────────────────────────────────────────────
+
+class _ManualEntryPage extends StatefulWidget {
+  final int eventId;
+  final String eventTitle;
+  final VoidCallback onScanComplete;
+
+  const _ManualEntryPage({
+    required this.eventId,
+    required this.eventTitle,
+    required this.onScanComplete,
+  });
+
+  @override
+  State<_ManualEntryPage> createState() => _ManualEntryPageState();
+}
+
+class _ManualEntryPageState extends State<_ManualEntryPage> {
+  final TextEditingController _textController = TextEditingController();
+  bool _isProcessing = false;
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
+  void _processCode(String code) async {
+    setState(() => _isProcessing = true);
+
+    final ticketProvider = Provider.of<TicketProvider>(context, listen: false);
+    final result = await ticketProvider.processCheckIn(code, eventId: widget.eventId);
+
+    if (!mounted) return;
+
+    final success = result['success'] == true;
+    final message = result['message'] ?? 'Unknown result';
+
+    // Show result dialog
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: (success ? AppColors.success : AppColors.danger).withValues(alpha: 0.1),
+              ),
+              child: Icon(
+                success ? Icons.check_circle : Icons.error,
+                size: 48,
+                color: success ? AppColors.success : AppColors.danger,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              success
+                  ? Provider.of<LanguageProvider>(ctx, listen: false).translate('checkin_successful')
+                  : Provider.of<LanguageProvider>(ctx, listen: false).translate('checkin_failed'),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: success ? AppColors.success : AppColors.danger,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              style: const TextStyle(color: AppColors.textMuted),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                setState(() => _isProcessing = false);
+                _textController.clear();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child: Text(
+                Provider.of<LanguageProvider>(ctx, listen: false).translate('scan_next'),
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    widget.onScanComplete();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final language = Provider.of<LanguageProvider>(context);
+
+    return Scaffold(
+      backgroundColor: AppColors.bgDark,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(widget.eventTitle, style: const TextStyle(fontSize: 16)),
+        centerTitle: true,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 40),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.bgCard,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.edit_outlined, color: AppColors.accent, size: 24),
+                      const SizedBox(width: 12),
+                      Text(
+                        language.translate('manual_entry'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    language.translate('enter_ticket_code_hint'),
+                    style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black26,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: TextField(
+                      controller: _textController,
+                      style: const TextStyle(color: Colors.white),
+                      autofocus: true,
+                      enabled: !_isProcessing,
+                      decoration: InputDecoration(
+                        hintText: language.translate('ticket_code_placeholder'),
+                        hintStyle: const TextStyle(color: Colors.white24, fontSize: 14),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+            if (_isProcessing)
+              const Center(child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2))
+            else
+              ElevatedButton(
+                onPressed: () {
+                  final code = _textController.text.trim();
+                  if (code.isNotEmpty) {
+                    _processCode(code);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accent,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: Text(
+                  language.translate('check_in'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => _QRScannerPage(
+                      eventId: widget.eventId,
+                      eventTitle: widget.eventTitle,
+                      onScanComplete: widget.onScanComplete,
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.qr_code_scanner_rounded, size: 20),
+              label: Text(
+                language.translate('switch_to_camera'),
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.accent,
+                side: BorderSide(color: AppColors.accent.withValues(alpha: 0.5)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ── Embedded QR Scanner Page ──────────────────────────────────────────────────
 
 class _QRScannerPage extends StatefulWidget {
@@ -414,6 +645,7 @@ class _QRScannerPageState extends State<_QRScannerPage> {
   @override
   void dispose() {
     _controller?.dispose();
+    _controller = null;
     super.dispose();
   }
 
@@ -500,102 +732,19 @@ class _QRScannerPageState extends State<_QRScannerPage> {
     widget.onScanComplete();
   }
 
-  void _showManualEntryDialog() {
-    final language = Provider.of<LanguageProvider>(context, listen: false);
-    final textCtrl = TextEditingController();
-
-    setState(() {
-      _isProcessing = true;
-    });
-
-    showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        return AlertDialog(
-          backgroundColor: AppColors.bgCard,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(
-            children: [
-              const Icon(Icons.edit_outlined, color: AppColors.accent),
-              const SizedBox(width: 8),
-              Text(
-                language.translate('manual_entry'),
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                language.translate('enter_ticket_code_hint'),
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.black26,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: TextField(
-                  controller: textCtrl,
-                  style: const TextStyle(color: Colors.white),
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    hintText: language.translate('ticket_code_placeholder'),
-                    hintStyle: const TextStyle(color: Colors.white24, fontSize: 14),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-              },
-              child: Text(
-                language.translate('cancel'),
-                style: const TextStyle(color: AppColors.textMuted),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final code = textCtrl.text.trim();
-                if (code.isNotEmpty) {
-                  Navigator.pop(ctx, code);
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accent,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              child: Text(
-                language.translate('check_in'),
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        );
-      },
-    ).then((code) {
-      textCtrl.dispose();
-      if (code != null && code.isNotEmpty) {
-        _processCode(code);
-      } else {
-        if (mounted) {
-          setState(() {
-            _isProcessing = false;
-          });
-        }
-      }
-    });
+  void _navigateToManualEntry() {
+    _controller?.dispose();
+    _controller = null;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _ManualEntryPage(
+          eventId: widget.eventId,
+          eventTitle: widget.eventTitle,
+          onScanComplete: widget.onScanComplete,
+        ),
+      ),
+    );
   }
 
   @override
@@ -654,7 +803,7 @@ class _QRScannerPageState extends State<_QRScannerPage> {
                        ),
                        const SizedBox(height: 16),
                        GestureDetector(
-                         onTap: _showManualEntryDialog,
+                         onTap: _navigateToManualEntry,
                          child: Container(
                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
                            decoration: BoxDecoration(

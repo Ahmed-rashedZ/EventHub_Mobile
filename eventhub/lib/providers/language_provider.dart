@@ -654,7 +654,7 @@ class LanguageProvider with ChangeNotifier {
     'manual_entry': 'إدخال يدوي',
     'enter_ticket_code_hint': 'أدخل رمز التذكرة يدوياً',
     'ticket_code_placeholder': 'أدخل رمز التذكرة...',
-    'check_in': 'تسجيل الدخول',
+    'check_in': 'تسجيل',
     'portfolio': 'سجل الأحداث',
     'joined': 'انضم في',
     'no_bio_available': 'لا توجد سيرة ذاتية متاحة.',
