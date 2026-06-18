@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../utils/constants.dart';
+import '../../widgets/language_toggle_button.dart';
 import '../user/main_navigation.dart';
 import '../assistant/assistant_main_navigation.dart';
 import 'forgot_password_screen.dart';
@@ -282,6 +283,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 ),
               ),
             ),
+          ),
+
+          // ── Language Toggle Button ──
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 12,
+            right: language.isArabic ? 16 : null,
+            left: language.isArabic ? null : 16,
+            child: const LanguageToggleButton(),
           ),
         ],
       ),
