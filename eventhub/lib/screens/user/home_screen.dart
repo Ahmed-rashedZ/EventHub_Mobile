@@ -18,11 +18,15 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   String _search = '';
   String _selectedCategory = 'All';
   String _headerTitle = '';
   static bool _hasShownGreeting = false;
+  bool _showGreeting = false;
+  late AnimationController _textSlideController;
+  late Animation<double> _slideAnimation;
+  late Animation<double> _opacityAnimation;
   final _categories = ['All', 'Technical', 'Workshop', 'Conference', 'Seminar', 'Cultural', 'Other'];
 
   final Map<String, IconData> _catIcons = {
@@ -48,11 +52,27 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _textSlideController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _slideAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _textSlideController, curve: Curves.easeInOut),
+    );
+    _opacityAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _textSlideController, curve: Curves.easeInOut),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<EventProvider>(context, listen: false).fetchEvents();
       Provider.of<TicketProvider>(context, listen: false).fetchMyTickets();
       _startHeaderAnimation();
     });
+  }
+
+  @override
+  void dispose() {
+    _textSlideController.dispose();
+    super.dispose();
   }
 
   void _startHeaderAnimation() {
@@ -65,25 +85,30 @@ class _HomeScreenState extends State<HomeScreen> {
 
     _hasShownGreeting = true;
 
-    // Step 1: Start as EventHub
+    // Step 1: Start as EventHub with ventHub visible
     setState(() => _headerTitle = 'EventHub');
 
-    // Step 2: After 1 second, change to Hello/Marhaba
+    // Step 2: After 1 second, slide ventHub INTO the logo
     Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
+      if (!mounted) return;
+      _textSlideController.forward().then((_) {
+        if (!mounted) return;
+        // ventHub is now hidden behind logo → show greeting
         setState(() {
-          _headerTitle = language.isArabic ? 'مرحباً' : 'Hello';
+          _showGreeting = true;
+          _headerTitle = language.isArabic ? 'مرحبا' : 'Hello';
         });
 
-        // Step 3: After 2 more seconds, revert back to EventHub
+        // Step 3: After 2 seconds, hide greeting and slide ventHub OUT from logo
         Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) {
-            setState(() {
-              _headerTitle = 'EventHub';
-            });
-          }
+          if (!mounted) return;
+          setState(() {
+            _showGreeting = false;
+            _headerTitle = 'EventHub';
+          });
+          _textSlideController.reverse();
         });
-      }
+      });
     });
   }
 
@@ -297,44 +322,88 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       // App Logo / Notifications
-                      ShaderMask(
-                        shaderCallback: (bounds) => const LinearGradient(
-                          colors: [AppColors.accent2, AppColors.accent],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ).createShader(bounds),
-                        child: _hasShownGreeting && _headerTitle == 'EventHub'
-                            ? const Text(
-                                'EventHub',
-                                style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.white,
-                                  letterSpacing: -1.0,
-                                ),
-                              )
-                            : AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 600),
-                                transitionBuilder: (child, animation) {
-                                  return FadeTransition(
-                                    opacity: animation,
-                                    child: ScaleTransition(
-                                      scale: animation,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        textDirection: TextDirection.ltr,
+                        children: [
+                          Image.asset(
+                            'assets/images/logo.png',
+                            height: 52,
+                          ),
+                          // Animated ventHub text + greeting overlay
+                          Stack(
+                            textDirection: TextDirection.ltr,
+                            alignment: Alignment.centerLeft,
+                            children: [
+                              // ventHub text with slide animation
+                              AnimatedBuilder(
+                                animation: _textSlideController,
+                                builder: (context, child) {
+                                  return Transform.translate(
+                                    offset: Offset(
+                                      -16 + (-70 * _slideAnimation.value),
+                                      3,
+                                    ),
+                                    child: Opacity(
+                                      opacity: _opacityAnimation.value,
                                       child: child,
                                     ),
                                   );
                                 },
-                                child: Text(
-                                  _headerTitle.isEmpty ? 'EventHub' : _headerTitle,
-                                  key: ValueKey(_headerTitle),
-                                  style: const TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w900,
-                                    color: Colors.white,
-                                    letterSpacing: -1.0,
+                                child: ShaderMask(
+                                  shaderCallback: (bounds) => const LinearGradient(
+                                    colors: [AppColors.accent, AppColors.accent2],
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                  ).createShader(bounds),
+                                  child: const Text(
+                                    'ventHub',
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.white,
+                                      letterSpacing: -1.0,
+                                    ),
                                   ),
                                 ),
                               ),
+                              // Greeting overlay
+                              if (_showGreeting)
+                                Transform.translate(
+                                  offset: const Offset(12, 3),
+                                  child: ShaderMask(
+                                    shaderCallback: (bounds) => const LinearGradient(
+                                      colors: [AppColors.accent, AppColors.accent2],
+                                      begin: Alignment.centerLeft,
+                                      end: Alignment.centerRight,
+                                    ).createShader(bounds),
+                                    child: AnimatedSwitcher(
+                                      duration: const Duration(milliseconds: 400),
+                                      transitionBuilder: (child, animation) {
+                                        return FadeTransition(
+                                          opacity: animation,
+                                          child: ScaleTransition(
+                                            scale: animation,
+                                            child: child,
+                                          ),
+                                        );
+                                      },
+                                      child: Text(
+                                        _headerTitle,
+                                        key: ValueKey(_headerTitle),
+                                        style: TextStyle(
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
+                                          letterSpacing: language.isArabic ? 0.0 : -0.5,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
                       ),
                     ],
                   ),
