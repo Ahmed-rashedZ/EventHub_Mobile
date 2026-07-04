@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
@@ -278,6 +280,44 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           child: Text(language.translate('create_account'), style: const TextStyle(color: AppColors.accent2, fontWeight: FontWeight.bold)),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Contact Support
+                    GestureDetector(
+                      onTap: () async {
+                        const email = 'support@eventhub.com';
+                        await Clipboard.setData(const ClipboardData(text: email));
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: [
+                                  const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text(language.translate('email_copied_to_clipboard')),
+                                ],
+                              ),
+                              backgroundColor: AppColors.success,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              margin: const EdgeInsets.all(16),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                        final uri = Uri(scheme: 'mailto', path: email);
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri);
+                        }
+                      },
+                      child: Text(
+                        language.translate('contact_support'),
+                        style: const TextStyle(
+                          color: AppColors.accent2,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
                   ],
                 ),
