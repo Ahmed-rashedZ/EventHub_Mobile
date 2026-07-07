@@ -20,6 +20,11 @@ class TicketProvider extends ChangeNotifier {
     return _myTickets.where((t) {
       final event = t['event'];
       if (event == null) return false;
+      final endTime = event['end_time'];
+      if (endTime != null) {
+        final dt = DateTime.tryParse(endTime);
+        return dt != null && dt.isAfter(now);
+      }
       final startTime = event['start_time'];
       if (startTime == null) return true;
       final dt = DateTime.tryParse(startTime);
@@ -33,6 +38,11 @@ class TicketProvider extends ChangeNotifier {
     return _myTickets.where((t) {
       final event = t['event'];
       if (event == null) return false;
+      final endTime = event['end_time'];
+      if (endTime != null) {
+        final dt = DateTime.tryParse(endTime);
+        return dt != null && dt.isBefore(now);
+      }
       final startTime = event['start_time'];
       if (startTime == null) return false;
       final dt = DateTime.tryParse(startTime);

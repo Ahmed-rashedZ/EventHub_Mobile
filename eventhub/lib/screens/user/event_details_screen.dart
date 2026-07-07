@@ -98,7 +98,26 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   void _book() async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
     final language = Provider.of<LanguageProvider>(context, listen: false);
+    
+    if (!auth.isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(children: [
+            const Icon(Icons.login_outlined, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Expanded(child: Text(language.translate('login_required_msg') ?? 'Please login to book a ticket')),
+          ]),
+          backgroundColor: AppColors.warning,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
+      return;
+    }
+    
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
