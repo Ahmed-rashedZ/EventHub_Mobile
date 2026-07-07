@@ -27,10 +27,30 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
     }).toList();
   }
 
+  bool _isTicketLive(dynamic ticket) {
+    final event = ticket['event'] as Map<String, dynamic>? ?? {};
+    final dateStr = event['start_time'];
+    DateTime dt;
+    try { dt = dateStr != null ? DateTime.parse(dateStr) : DateTime.now(); } catch (_) { dt = DateTime.now(); }
+    
+    final now = DateTime.now();
+    final isLive = dt.isBefore(now);
+    final endStr = event['end_time'];
+    DateTime? endDt;
+    try {
+      if (endStr != null) {
+        endDt = DateTime.parse(endStr);
+      }
+    } catch (_) {}
+    final isEnded = (endDt != null && endDt.isBefore(now)) || event['time_status'] == 'ended';
+    
+    return isLive && !isEnded;
+  }
+
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 2, vsync: this);
+    _tabCtrl = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<TicketProvider>(context, listen: false).fetchMyTickets();
       Provider.of<TicketProvider>(context, listen: false).markTicketsAsRead();
@@ -116,8 +136,21 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
                 labelColor: Colors.white,
                 unselectedLabelColor: AppColors.textMuted,
                 tabs: [
-                  Tab(text: '${language.translate('upcoming_events')} (${_filterTickets(ticketProv.upcomingTickets).length})'),
-                  Tab(text: '${language.translate('history')} (${_filterTickets(ticketProv.pastTickets).length})'),
+                  Tab(
+                    child: _MarqueeText(
+                      text: '${language.translate('live_events')} (${_filterTickets(ticketProv.upcomingTickets.where(_isTicketLive).toList()).length})',
+                    ),
+                  ),
+                  Tab(
+                    child: _MarqueeText(
+                      text: '${language.translate('upcoming_events')} (${_filterTickets(ticketProv.upcomingTickets.where((t) => !_isTicketLive(t)).toList()).length})',
+                    ),
+                  ),
+                  Tab(
+                    child: _MarqueeText(
+                      text: '${language.translate('history')} (${_filterTickets(ticketProv.pastTickets).length})',
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -129,7 +162,8 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
                   : TabBarView(
                       controller: _tabCtrl,
                       children: [
-                        _buildTicketList(_filterTickets(ticketProv.upcomingTickets), isUpcoming: true),
+                        _buildTicketList(_filterTickets(ticketProv.upcomingTickets.where(_isTicketLive).toList()), isLive: true),
+                        _buildTicketList(_filterTickets(ticketProv.upcomingTickets.where((t) => !_isTicketLive(t)).toList()), isUpcoming: true),
                         _buildTicketList(_filterTickets(ticketProv.pastTickets), isUpcoming: false),
                       ],
                     ),
@@ -140,7 +174,7 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
     );
   }
 
-  Widget _buildTicketList(List<dynamic> tickets, {required bool isUpcoming}) {
+  Widget _buildTicketList(List<dynamic> tickets, {bool isUpcoming = false, bool isLive = false}) {
     final language = Provider.of<LanguageProvider>(context);
     if (tickets.isEmpty) {
       return Center(
@@ -149,13 +183,13 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(color: AppColors.bgCard, shape: BoxShape.circle),
             child: Icon(
-              isUpcoming ? Icons.confirmation_number_outlined : Icons.history_rounded,
+              isLive ? Icons.live_tv : (isUpcoming ? Icons.confirmation_number_outlined : Icons.history_rounded),
               size: 48, color: AppColors.textMuted.withValues(alpha: 0.3),
             ),
           ),
           const SizedBox(height: 16),
           Text(
-            isUpcoming ? language.translate('no_upcoming_events') : language.translate('no_history'),
+            isLive ? language.translate('no_live_events') : (isUpcoming ? language.translate('no_upcoming_events') : language.translate('no_history')),
             style: TextStyle(color: AppColors.textMuted.withValues(alpha: 0.6), fontSize: 15),
           ),
           if (isUpcoming) ...[
@@ -171,7 +205,7 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         itemCount: tickets.length,
-        itemBuilder: (_, i) => _buildTicketCard(tickets[i], isUpcoming: isUpcoming),
+        itemBuilder: (_, i) => _buildTicketCard(tickets[i], isUpcoming: isUpcoming || isLive),
       ),
     );
   }
@@ -366,6 +400,76 @@ class _MyTicketsScreenState extends State<MyTicketsScreen> with SingleTickerProv
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _MarqueeText extends StatefulWidget {
+  final String text;
+  
+  const _MarqueeText({required this.text});
+
+  @override
+  State<_MarqueeText> createState() => _MarqueeTextState();
+}
+
+class _MarqueeTextState extends State<_MarqueeText> with SingleTickerProviderStateMixin {
+  late ScrollController _scrollController;
+  late AnimationController _animationController;
+  double _scrollPosition = 0.0;
+  bool _isScrolling = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    )..addListener(_scroll);
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkOverflow();
+    });
+  }
+
+  void _checkOverflow() {
+    if (_scrollController.hasClients) {
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      if (maxScroll > 0 && !_isScrolling) {
+        _isScrolling = true;
+        _animationController.repeat();
+      }
+    }
+  }
+
+  void _scroll() {
+    if (_scrollController.hasClients) {
+      _scrollPosition += 1.0;
+      if (_scrollPosition > _scrollController.position.maxScrollExtent + 50) {
+        _scrollPosition = -50.0;
+      }
+      _scrollController.jumpTo(_scrollPosition);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      controller: _scrollController,
+      scrollDirection: Axis.horizontal,
+      physics: const NeverScrollableScrollPhysics(),
+      child: Text(
+        widget.text,
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
       ),
     );
   }
